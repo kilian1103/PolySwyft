@@ -22,7 +22,7 @@ class Simulator(swyft.Simulator):
         return theta
 
     def likelihood(self, theta):
-        cltheory, sample = self.cmbs.get_samples(self.bin_centers, theta, self.bins, noise=self.p_noise, cp=self.cp)
+        cltheory, sample = self.cmbs.get_samples(theta, self.bins, noise=self.p_noise, cp=self.cp)
         return sample * self.conversion
 
     def build(self, graph):
