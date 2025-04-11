@@ -71,7 +71,6 @@ def execute():
     mcmc_true = MCMCSamples(
         data=posterior, weights=weights.squeeze(),
         logL=true_logratios, labels=params_labels)
-    mcmc_true.set_label()
 
     #### instantiate swyft network
     network = Network(polyswyftSettings=polyswyftSettings, obs=obs)
