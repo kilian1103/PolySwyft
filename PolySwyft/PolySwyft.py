@@ -1,13 +1,13 @@
 import logging
 import pickle
 from typing import Callable
-
+from PolySwyft.PolySwyft_Dataloader import PolySwyftDataModule
 import pypolychord
 import wandb
 from pytorch_lightning.loggers import WandbLogger
 
-from PolySwyft.PolySwyft_retrain import retrain_next_round
 from PolySwyft.utils import *
+from PolySwyft.PolySwyft_Settings import PolySwyft_Settings
 import swyft
 
 class PolySwyft:
@@ -152,13 +152,15 @@ class PolySwyft:
 
         ### continue lr rate at last point
         if self.lr_round_scheduler is not None:
-            learning_rate = self.lr_round_scheduler(rd)
+            learning_rate = self.lr_round_scheduler(rd) #between rounds
             self.network_model.optimizer_init.optim_args = dict(lr=learning_rate)
 
-        network = retrain_next_round(root=root, deadpoints=self.current_deadpoints,
-                                     polyswyftSettings=self.polyswyftSettings, sim=self.sim,
-                                     network=network,
-                                     trainer=trainer, rd=rd)
+        resimulate_deadpoints(deadpoints=self.current_deadpoints, polyswyftSettings=self.polyswyftSettings, sim=self.sim, rd=rd)
+
+        dm = PolySwyftDataModule(polyswyftSettings=self.polyswyftSettings,rd=rd,
+                                 **self.polyswyftSettings.dm_kwargs)
+        network.train()
+        trainer.fit(network, dm)
         comm_gen.Barrier()
         if self.polyswyftSettings.activate_wandb and rank_gen == 0:
             wandb.finish(**self.finish_kwargs)

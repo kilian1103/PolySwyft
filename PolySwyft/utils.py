@@ -1,7 +1,7 @@
 import os
 from typing import Dict
 from typing import Tuple
-
+import sklearn
 import anesthetic
 import numpy as np
 import pandas as pd
@@ -10,7 +10,7 @@ import torch
 from anesthetic import NestedSamples
 from pypolychord import PolyChordSettings
 from scipy.special import logsumexp
-
+from swyft import collate_output as reformat_samples, Simulator
 from PolySwyft.PolySwyft_Settings import PolySwyft_Settings
 
 
@@ -192,3 +192,77 @@ def delete_previous_joint_training_data(until_rd: int, root: str, nreSettings: P
         except FileNotFoundError:
             pass
     return
+
+
+
+def resimulate_deadpoints(deadpoints: np.ndarray, polyswyftSettings: PolySwyft_Settings,
+                          sim: Simulator,rd: int):
+    """
+    Retrain the network for the next round of NSNRE.
+    :param root: A string of the root folder
+    :param deadpoints: A tensor of deadpoints
+    :param polyswyftSettings: A PolySwyft_Settings object
+    :param sim: A swyft simulator object
+    :param obs: A swyft sample of the observed data
+    :param network: A swyft network object
+    :param trainer: A swyft trainer object
+    :param rd: An integer of the round number
+    :return: A trained swyft network object
+    """
+    logger = polyswyftSettings.logger
+    try:
+        from mpi4py import MPI
+    except ImportError:
+        raise ImportError("mpi4py is required for this function!")
+
+    comm_gen = MPI.COMM_WORLD
+    rank_gen = comm_gen.Get_rank()
+    size_gen = comm_gen.Get_size()
+
+    logger.info(
+        f"Simulating joint training dataset ({polyswyftSettings.obsKey}, {polyswyftSettings.targetKey}) using deadpoints with "
+        f"Simulator!")
+
+    ### simulate joint distribution using deadpoints ###
+    deadpoints = np.array_split(deadpoints, size_gen)
+    deadpoints = deadpoints[rank_gen]
+    samples = []
+    for point in deadpoints:
+        cond = {polyswyftSettings.targetKey: point}
+        ### noise resampling ###
+        if polyswyftSettings.use_noise_resampling and rd > 0:
+            resampler = sim.get_resampler(targets=[polyswyftSettings.obsKey])
+            for _ in range(polyswyftSettings.n_noise_resampling_samples):
+                cond[polyswyftSettings.obsKey] = None
+                sample = resampler(cond)
+                samples.append(sample)
+        else:
+            sample = sim.sample(conditions=cond, targets=[polyswyftSettings.obsKey])
+            samples.append(sample)
+
+    del deadpoints
+    comm_gen.Barrier()
+    samples = comm_gen.allgather(samples)
+    samples = np.concatenate(samples, axis=0)
+    samples = samples.tolist()
+    logger.info(f"Total number of samples for training the network: {len(samples)}")
+    comm_gen.Barrier()
+    samples = reformat_samples(samples)
+    logger.info("Simulation done!")
+    thetas = torch.empty(size=samples[polyswyftSettings.targetKey].shape)
+    Ds = torch.empty(size=samples[polyswyftSettings.obsKey].shape)
+    ### shuffle training data to reduce ordinal bias introduced by deadpoints###
+    if rank_gen == 0:
+        thetas = samples[polyswyftSettings.targetKey]
+        Ds = samples[polyswyftSettings.obsKey]
+        joint =  np.array(sklearn.utils.shuffle(list(zip(thetas,Ds))),dtype=object)
+        thetas = np.stack(joint[:, 0])
+        Ds = np.stack(joint[:, 1])
+    comm_gen.Barrier()
+    thetas = comm_gen.bcast(thetas, root=0)
+    Ds = comm_gen.bcast(Ds, root=0)
+    ### save training data for NRE on disk ###
+    if rank_gen == 0:
+        np.save(arr=thetas, file=f"{polyswyftSettings.root}/{polyswyftSettings.child_root}_{rd}/thetas.npy")
+        np.save(arr=Ds, file=f"{polyswyftSettings.root}/{polyswyftSettings.child_root}_{rd}/Ds.npy")
+    comm_gen.Barrier()
