@@ -18,7 +18,7 @@ from PolySwyft.PolySwyft_Simulator_MixGauss import Simulator
 from PolySwyft.PolySwyft import PolySwyft
 from PolySwyft.utils import reload_data_for_plotting
 
-
+###requires lsbi==0.9.0 for reproducibility
 def execute():
     # add different seed for each rank
     comm_gen = MPI.COMM_WORLD

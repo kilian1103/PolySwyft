@@ -8,7 +8,7 @@ from pytorch_lightning.loggers import WandbLogger
 
 from PolySwyft.PolySwyft_retrain import retrain_next_round
 from PolySwyft.utils import *
-import matplotlib.pyplot as plt
+import swyft
 
 class PolySwyft:
     def __init__(self, polyswyftSettings: PolySwyft_Settings, sim: swyft.Simulator,

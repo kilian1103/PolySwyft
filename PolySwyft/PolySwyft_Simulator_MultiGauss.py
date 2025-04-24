@@ -1,7 +1,6 @@
 import swyft
 import torch
 from lsbi.model import LinearModel
-
 from PolySwyft.PolySwyft_Settings import PolySwyft_Settings
 
 
@@ -12,7 +11,7 @@ class Simulator(swyft.Simulator):
         self.polyswyftSettings = polyswyftSettings
         self.n = self.polyswyftSettings.num_features
         self.d = self.polyswyftSettings.num_features_dataset
-        self.C_inv = torch.inverse(C)
+        #self.C_inv = torch.inverse(C)
         self.model = LinearModel(M=M, C=C, Sigma=Sigma, mu=mu, m=m, n=self.n, d=self.d)
 
     def logratio(self, x, z):
