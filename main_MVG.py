@@ -95,7 +95,6 @@ def execute():
     polyset.nlive = 100*polyswyftSettings.num_features
     polySwyft = PolySwyft(polyswyftSettings=polyswyftSettings, sim=sim, obs=obs, deadpoints=deadpoints,
                           network=network, polyset=polyset, callbacks=create_callbacks, lr_round_scheduler=lr_round_scheduler)
-    del deadpoints
     if not polyswyftSettings.only_plot_mode:
         ### execute main cycle of NSNRE
         polySwyft.execute_NSNRE_cycle()
