@@ -2,7 +2,7 @@ class PolySwyft_Settings:
     def __init__(self):
         """NRE initialisation.
         """
-        self.root = "PolySwyft_TEST"
+        self.root = "PolySwyft_example_run"
         # root directory
         self.child_root = "round"  # root for each round: {root}/{child_root}
         self.wandb_project_name = self.root
@@ -71,9 +71,8 @@ class PolySwyft_Settings:
         self.increased_livepoints_fileroot = "enhanced_run"
         # plotting settings
         self.only_plot_mode = False
-        self.plot_triangle_plot = False
-        self.plot_triangle_plot_zoomed = True
-        self.triangle_zoom_start =16
+        self.plot_triangle_plot = True
+        self.triangle_start = 0
         self.plot_KL_divergence = True
         self.plot_logR_histogram = False
         self.plot_logR_pdf = False

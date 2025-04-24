@@ -44,11 +44,12 @@ def plot_analysis_of_NSNRE(root: str, network_storage: Dict[int, swyft.SwyftModu
         kinds = {'lower': 'kde_2d', 'diagonal': 'kde_1d', 'upper': "scatter_2d"}
         fig, axes = make_2d_axes(params_idx, labels=params_labels, lower=True, diagonal=True, upper=True,
                                  ticks="outer")
-        first_round_samples = samples_storage[0]
-        # load prior from last round
-        prior = first_round_samples.prior()
-        prior.plot_2d(axes=axes, alpha=0.4, label="prior", kinds=kinds)
-        for rd in range(0, polyswyftSettings.NRE_num_retrain_rounds + 1):
+        if polyswyftSettings.triangle_start == 0:
+            first_round_samples = samples_storage[0]
+            # load prior from last round
+            prior = first_round_samples.prior()
+            prior.plot_2d(axes=axes, alpha=0.4, label="prior", kinds=kinds)
+        for rd in range(polyswyftSettings.triangle_start, polyswyftSettings.NRE_num_retrain_rounds + 1):
             nested = samples_storage[rd]
             nested.plot_2d(axes=axes, alpha=0.4, label=fr"$p(\theta|D)_{rd}$",
                            kinds=kinds)
@@ -58,25 +59,7 @@ def plot_analysis_of_NSNRE(root: str, network_storage: Dict[int, swyft.SwyftModu
 
         axes.iloc[-1, 0].legend(bbox_to_anchor=(len(axes) / 2, len(axes)), loc='lower center',
                                 ncols=polyswyftSettings.NRE_num_retrain_rounds + 2)
-        fig.savefig(f"{root}/NRE_triangle_posterior_full.pdf")
-
-        ### zoomed in triangle plot
-    if polyswyftSettings.plot_triangle_plot_zoomed:
-        kinds = {'lower': 'kde_2d', 'diagonal': 'kde_1d', 'upper': "scatter_2d"}
-        fig, axes = make_2d_axes(params_idx, labels=params_labels, lower=True, diagonal=True, upper=True,
-                                 ticks="outer")
-        for rd in range(polyswyftSettings.triangle_zoom_start,
-                        polyswyftSettings.NRE_num_retrain_rounds + 1):
-            nested = samples_storage[rd]
-            nested.plot_2d(axes=axes, alpha=0.4, label=fr"$p(\theta|D)_{rd}$",
-                           kinds=kinds)
-        if true_posterior is not None:
-            true_posterior.plot_2d(axes=axes, alpha=0.9, label="true", color="red",
-                                   kinds=kinds)
-        axes.iloc[-1, 0].legend(bbox_to_anchor=(len(axes) / 2, len(axes)), loc='lower center',
-                                ncols=polyswyftSettings.NRE_num_retrain_rounds + 2)
-        fig.savefig(f"{root}/NRE_triangle_posterior_zoom.pdf")
-        plt.close()
+        fig.savefig(f"{root}/NRE_triangle_posterior.pdf")
 
     # KL divergence plot
     if polyswyftSettings.plot_KL_divergence:
