@@ -45,14 +45,14 @@ def main():
     first_bin_width = 1
     second_bin_width = 30
     divider = 30
-    bins = np.array([np.arange(2, l_max, 1), np.arange(2, l_max, 1)]).T  # 2 to 2508
-    #first_bins = np.array([np.arange(2, divider, first_bin_width), np.arange(2, divider, first_bin_width)]).T  # 2 to 29
-    #second_bins = np.array([np.arange(divider, l_max - second_bin_width, second_bin_width),
-     #                       np.arange(divider + second_bin_width, l_max, second_bin_width)]).T  # 30 to 2508
-    #last_bin = np.array([[second_bins[-1, 1], l_max]])  # remainder
-    #bins = np.concatenate([first_bins, second_bins, last_bin])
-    bin_centers = bins[:, 0]
-    #bin_centers = np.concatenate([first_bins[:, 0], np.mean(bins[divider - 2:], axis=1)])
+    #bins = np.array([np.arange(2, l_max, 1), np.arange(2, l_max, 1)]).T  # 2 to 2508 unbinned
+    first_bins = np.array([np.arange(2, divider, first_bin_width), np.arange(2, divider, first_bin_width)]).T  # 2 to 29
+    second_bins = np.array([np.arange(divider, l_max - second_bin_width, second_bin_width),
+                            np.arange(divider + second_bin_width, l_max, second_bin_width)]).T  # 30 to 2508
+    last_bin = np.array([[second_bins[-1, 1], l_max]])  # remainder
+    bins = np.concatenate([first_bins, second_bins, last_bin])
+    #bin_centers = bins[:, 0]
+    bin_centers = np.concatenate([first_bins[:, 0], np.mean(bins[divider - 2:], axis=1)])
     l = bin_centers.copy()
     polyswyftSettings.num_features_dataset = len(l)
 
