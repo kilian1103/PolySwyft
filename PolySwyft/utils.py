@@ -1,10 +1,8 @@
-import os
 from typing import Dict
 from typing import Tuple
 import sklearn
 import anesthetic
 import numpy as np
-import pandas as pd
 import swyft
 import torch
 from anesthetic import NestedSamples
@@ -170,30 +168,6 @@ def reload_data_for_plotting(polyswyftSettings: PolySwyft_Settings, network: swy
     return root_storage, network_storage, samples_storage, dkl_storage
 
 
-def random_subset_after_truncation(deadpoints: anesthetic.NestedSamples, logR_cutoff: float,
-                                   p: float) -> anesthetic.NestedSamples:
-    rest = deadpoints[deadpoints.logL >= logR_cutoff]
-    bools = np.random.choice([True, False], size=rest.shape[0], p=[p, 1 - p])
-    rest = rest[bools]
-    deadpoints = pd.concat([deadpoints, rest], axis=0)
-    deadpoints.drop_duplicates(inplace=True)
-    return deadpoints
-
-
-def delete_previous_joint_training_data(until_rd: int, root: str, nreSettings: PolySwyft_Settings):
-    """
-    Delete previous joint training data.
-    :param until_rd: An integer of the round number to delete until
-    :param root: A string of the root directory
-    """
-    for rd in range(until_rd):
-        try:
-            os.remove(f"{root}/{nreSettings.child_root}_{rd}/{nreSettings.joint_training_data_fileroot}")
-        except FileNotFoundError:
-            pass
-    return
-
-
 
 def resimulate_deadpoints(deadpoints: np.ndarray, polyswyftSettings: PolySwyft_Settings,
                           sim: Simulator,rd: int):
@@ -266,3 +240,4 @@ def resimulate_deadpoints(deadpoints: np.ndarray, polyswyftSettings: PolySwyft_S
         np.save(arr=thetas, file=f"{polyswyftSettings.root}/{polyswyftSettings.child_root}_{rd}/thetas.npy")
         np.save(arr=Ds, file=f"{polyswyftSettings.root}/{polyswyftSettings.child_root}_{rd}/Ds.npy")
     comm_gen.Barrier()
+    return thetas, Ds

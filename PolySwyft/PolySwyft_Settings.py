@@ -24,7 +24,7 @@ class PolySwyft_Settings:
         self.targetKey = "z"
         self.contourKey = "l"
         self.posteriorsKey = "post"
-        self.num_features = 6
+        self.num_features = 5
         self.num_features_dataset = 100
         self.num_mixture_components = 4
         # network settings
@@ -38,6 +38,7 @@ class PolySwyft_Settings:
             'fractions': [0.8, 0.1, 0.1],
             'batch_size': 64,
             'shuffle': False,
+            'num_workers': 2
         }
         self.trainer_kwargs = {"accelerator": 'cpu',
                                "devices": 60,
@@ -56,12 +57,10 @@ class PolySwyft_Settings:
         self.model = None
         # NSNRE settings
         self.continual_learning_mode = True
-        self.cyclic_rounds = True
+        self.cyclic_rounds = True # experimental, KL mode not working yet
         self.NRE_num_retrain_rounds = 20
         self.NRE_start_from_round = 0
-        self.save_joint_training_data = True  # save joint training data for NRE retraining
-        self.joint_training_data_fileroot = "joint_training_data.pt"
-        self.termination_abs_dkl = 0.2
+        self.termination_abs_dkl = 0.2 #experimental, does not work properly yet
         self.n_DKL_estimates = 100
         self.use_noise_resampling = False
         self.n_noise_resampling_samples = 2
@@ -74,7 +73,4 @@ class PolySwyft_Settings:
         self.plot_triangle_plot = True
         self.triangle_start = 0
         self.plot_KL_divergence = True
-        self.plot_logR_histogram = False
-        self.plot_logR_pdf = False
-        self.plot_training_data = False
         self.plot_statistical_power = True

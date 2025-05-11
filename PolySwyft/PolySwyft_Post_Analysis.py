@@ -1,12 +1,10 @@
-import os
-from typing import Dict, Tuple, Callable
 
+from typing import Dict, Tuple, Callable
 import anesthetic
 import matplotlib.pyplot as plt
 import numpy as np
 import swyft
-import torch
-from anesthetic import make_2d_axes, make_1d_axes
+from anesthetic import make_2d_axes
 
 from PolySwyft.PolySwyft_Settings import PolySwyft_Settings
 from PolySwyft.utils import compute_KL_compression, compute_KL_divergence_truth
@@ -96,62 +94,6 @@ def plot_analysis_of_NSNRE(root: str, network_storage: Dict[int, swyft.SwyftModu
         plt.savefig(f"{root}/kl_divergence.pdf", dpi=300, bbox_inches='tight')
         plt.close()
 
-
-    if polyswyftSettings.plot_logR_histogram:
-        path = "logR_histogram"
-        try:
-            os.makedirs(f"{root}/{path}")
-        except OSError:
-            print(f"{path} folder already exists!")
-
-        for rd in range(0, polyswyftSettings.NRE_num_retrain_rounds + 1):
-            samples = samples_storage[rd]
-            logRs = samples["logL"] - samples.logZ()
-            plt.hist(samples["logL"], label=r"$\log r_{\mathrm{uncorr}}$", alpha=0.5, bins=50)
-            plt.hist(logRs, label=r"$\log r_{\mathrm{corr}}$", alpha=0.5, bins=50)
-            plt.title(r"$\log r$ histogram")
-            plt.xlabel(r"$\log r$")
-            plt.ylabel("Frequency")
-            plt.legend()
-            plt.savefig(f"{root}/{path}/logR_histogram_unweighted_{rd}.pdf")
-            plt.close()
-
-    if polyswyftSettings.plot_logR_pdf:
-        path = "logR_pdf"
-        try:
-            os.makedirs(f"{root}/{path}")
-        except OSError:
-            print(f"{path}-folder already exists!")
-
-        for rd in range(0, polyswyftSettings.NRE_num_retrain_rounds + 1):
-            samples = samples_storage[rd]
-            samples["logR"] = samples["logL"] - samples.logZ()
-            figs, axes = make_1d_axes("logR", figsize=(3.5, 3.5))
-            samples.plot_1d(axes=axes, label=f"round {rd}")
-            plt.xlabel(r"$\log r$")
-            plt.ylabel(r"$p(\log r)$")
-            plt.legend()
-            plt.savefig(f"{root}/{path}/logR_pdf_{rd}.pdf", dpi=300, bbox_inches='tight')
-            plt.close()
-
-
-
-    if polyswyftSettings.save_joint_training_data and polyswyftSettings.plot_training_data:
-        path = "training_data"
-        try:
-            os.makedirs(f"{root}/{path}")
-        except OSError:
-            print(f"{path}-folder already exists!")
-
-        for rd in range(0, polyswyftSettings.NRE_num_retrain_rounds + 1):
-            joint = torch.load(f"{root}/{polyswyftSettings.child_root}_{rd}/{polyswyftSettings.joint_training_data_fileroot}")
-            plt.figure()
-            plt.scatter(joint[polyswyftSettings.targetKey][:, 0], joint[polyswyftSettings.targetKey][:, 1], s=2, alpha=0.05)
-            plt.xlabel(r"$\theta_0$")
-            plt.ylabel(r"$\theta_1$")
-            plt.title("training data distribution")
-            plt.savefig(f"{root}/{path}/training_data_{rd}.pdf")
-            plt.close()
 
     if polyswyftSettings.plot_statistical_power:
         initial_size = polyswyftSettings.n_training_samples
