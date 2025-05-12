@@ -80,6 +80,13 @@ def plot_analysis_of_NSNRE(root: str, network_storage: Dict[int, swyft.SwyftModu
                          y=[dkl_storage_true[i][0] for i in range(0, polyswyftSettings.NRE_num_retrain_rounds + 1)],
                          yerr=[dkl_storage_true[i][1] for i in range(0, polyswyftSettings.NRE_num_retrain_rounds + 1)],
                          label=r"$\mathrm{KL}(\mathcal{P}_{\mathrm{True}}||\mathcal{P}_i)$")
+
+            logPi = polyswyftSettings.model.prior().logpdf(true_posterior.iloc[:, :polyswyftSettings.num_features].to_numpy())
+            logP = polyswyftSettings.model.posterior(obs[polyswyftSettings.obsKey].squeeze()).logpdf(true_posterior)
+            dkl_compression_truth = 1/logP.shape[0]*((logP - logPi).sum())
+            plt.hlines(y=dkl_compression_truth, xmin=0, xmax=polyswyftSettings.NRE_num_retrain_rounds, color="red",
+                               label=r"$\mathrm{KL}(\mathcal{P}_{\mathrm{True}}||\pi)$",linestyle="--")
+
         dkl_compression_storage = {}
         for rd in range(0, polyswyftSettings.NRE_num_retrain_rounds + 1):
             DKL = compute_KL_compression(samples_storage[rd], polyswyftSettings)
