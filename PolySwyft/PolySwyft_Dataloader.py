@@ -42,8 +42,8 @@ class PolySwyftSequential(Dataset):
         data = self.round_data[rd]
 
         sample = {
-            self.ps.targetKey: torch.from_numpy(data[self.ps.targetKey][i]).float(),
-            self.ps.obsKey: torch.from_numpy(data[self.ps.obsKey][i]).float(),
+            self.ps.targetKey: torch.tensor(data[self.ps.targetKey][i]).float(),
+            self.ps.obsKey: torch.tensor(data[self.ps.obsKey][i]).float(),
         }
 
         if self.on_after_load_sample:
