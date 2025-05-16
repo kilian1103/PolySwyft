@@ -14,7 +14,7 @@ charset-normalizer==3.1.0
 click==8.1.3
 cloudpickle==3.0.0
 cmake==3.26.3
-cmblike @ file:///rds/user/khs40/hpc-work/cmb-likelihood
+cmblike @ git+https://github.com/htjb/cmb-likelihood.git
 contourpy==1.0.7
 cosmopower==0.2.0
 cosmopower_jax==0.5.3
@@ -86,7 +86,7 @@ psutil==5.9.5
 pyasn1==0.5.0
 pyasn1-modules==0.3.0
 pyparsing==3.0.9
-pypolychord @ file:///rds/user/khs40/hpc-work/LFI_NS_PROJECT/PolyChordLite
+pypolychord==1.22.1
 pytest==8.3.3
 python-dateutil==2.8.2
 pytorch-lightning==1.9.0
