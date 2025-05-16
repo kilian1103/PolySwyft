@@ -15,23 +15,22 @@ class Network(swyft.SwyftModule):
         self.optimizer_init = swyft.OptimizerInit(torch.optim.Adam, dict(lr=self.polyswyftSettings.learning_rate_init),
                                                   torch.optim.lr_scheduler.ExponentialLR,
                                                   dict(gamma=self.polyswyftSettings.learning_rate_decay))
-        self.network = swyft.LogRatioEstimator_Ndim(num_features=self.polyswyftSettings.num_summary_features, marginals=(
+        self.network = swyft.LogRatioEstimator_Ndim(num_features=self.polyswyftSettings.num_features_dataset, marginals=(
             tuple(dim for dim in range(self.polyswyftSettings.num_features)),),
                                                     varnames=self.polyswyftSettings.targetKey,
                                                     dropout=self.polyswyftSettings.dropout, hidden_features=128, Lmax=0)
-
-        self.summarizer = torch.nn.Sequential(torch.nn.Linear(self.polyswyftSettings.num_features_dataset, 32),
-                                              torch.nn.ReLU(),
-                                              torch.nn.Linear(32, 32),
-                                              torch.nn.ReLU(),
-                                              torch.nn.Linear(32, 16),
-                                              torch.nn.ReLU(),
-                                              torch.nn.Linear(16, self.polyswyftSettings.num_summary_features)
-                                              )
+        # self.summarizer = torch.nn.Sequential(torch.nn.Linear(self.polyswyftSettings.num_features_dataset, 32),
+        #                                       torch.nn.ReLU(),
+        #                                       torch.nn.Linear(32, 32),
+        #                                       torch.nn.ReLU(),
+        #                                       torch.nn.Linear(32, 16),
+        #                                       torch.nn.ReLU(),
+        #                                       torch.nn.Linear(16, self.polyswyftSettings.num_summary_features)
+        #                                       )
 
     def forward(self, A, B):
-        s = self.summarizer(A[self.polyswyftSettings.obsKey])
-        return self.network(s, B[self.polyswyftSettings.targetKey])
+        #s = self.summarizer(A[self.polyswyftSettings.obsKey])
+        return self.network(A[self.polyswyftSettings.obsKey], B[self.polyswyftSettings.targetKey])
 
     def prior(self, cube) -> np.ndarray:
         """Transforms the unit cube to the prior cube."""
@@ -44,8 +43,8 @@ class Network(swyft.SwyftModule):
         # check if list of datapoints or single datapoint
         if theta.ndim == 1:
             theta = theta.unsqueeze(0)
-        s = self.summarizer(self.obs[self.polyswyftSettings.obsKey])
-        prediction = self.network(s, theta)
+        #s = self.summarizer(self.obs[self.polyswyftSettings.obsKey])
+        prediction = self.network(self.obs[self.polyswyftSettings.obsKey], theta)
         if prediction.logratios[:, 0].shape[0] == 1:
             return float(prediction.logratios[:, 0]), []
         else:

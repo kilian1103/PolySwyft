@@ -72,13 +72,12 @@ def compute_KL_divergence_truth(polyswyftSettings: PolySwyft_Settings, previous_
         polyswyftSettings.targetKey: torch.as_tensor(true_posterior.iloc[:, :polyswyftSettings.num_features].to_numpy())}
     with torch.no_grad():
         predictions = previous_network(obs, swyft_samples)
-    true_posterior["logL_previous"] = predictions.logratios.numpy().squeeze()
-    # MCMC samples for true samples do not have logw functionality
+    true_posterior["logR"] = predictions.logratios.numpy().squeeze()
     samples = true_posterior.iloc[:, :polyswyftSettings.num_features].squeeze()
-    true_posterior_logL = polyswyftSettings.model.posterior(obs[polyswyftSettings.obsKey].numpy().squeeze()).logpdf(samples)
     true_prior = polyswyftSettings.model.prior().logpdf(samples)
-    true_posterior.logL = true_posterior_logL
-    true_posterior["logR"] = true_posterior["logL_previous"]
+    true_posterior_logL = polyswyftSettings.model.posterior(obs[polyswyftSettings.obsKey].numpy().squeeze()).logpdf(samples)
+    true_posterior["logL"] = true_posterior_logL
+
     logpqs = (true_posterior["logL"].values[:, None] - true_posterior["logR"].values[:, None] - true_prior[:,
                                                                                                 None] +
               previous_samples.logZ(
@@ -91,7 +90,7 @@ def compute_KL_divergence_truth(polyswyftSettings: PolySwyft_Settings, previous_
 
 def compute_KL_compression(samples: anesthetic.NestedSamples, polyswyftSettings: PolySwyft_Settings):
     """
-    Compute the KL compression of the samples, Prior to Posterior, KL(P||pi).
+    Compute the KL compression of the samples, Prior to Posterior, KL(P_i||pi).
     :param samples: An anesthetic NestedSamples object
     :param polyswyftSettings: A PolySwyft_Settings object
     :return: A tuple of the KL compression and the error
@@ -198,8 +197,9 @@ def resimulate_deadpoints(deadpoints: np.ndarray, polyswyftSettings: PolySwyft_S
         f"Simulator!")
 
     ### simulate joint distribution using deadpoints ###
-    deadpoints = np.array_split(deadpoints, size_gen)
-    deadpoints = deadpoints[rank_gen]
+    if size_gen > 1:
+        deadpoints = np.array_split(deadpoints, size_gen)
+        deadpoints = deadpoints[rank_gen]
     samples = []
     for point in deadpoints:
         cond = {polyswyftSettings.targetKey: point}
@@ -214,11 +214,11 @@ def resimulate_deadpoints(deadpoints: np.ndarray, polyswyftSettings: PolySwyft_S
             sample = sim.sample(conditions=cond, targets=[polyswyftSettings.obsKey])
             samples.append(sample)
 
-    del deadpoints
     comm_gen.Barrier()
-    samples = comm_gen.allgather(samples)
-    samples = np.concatenate(samples, axis=0)
-    samples = samples.tolist()
+    if size_gen > 1:
+        samples = comm_gen.allgather(samples)
+        samples = np.concatenate(samples, axis=0)
+        samples = samples.tolist()
     logger.info(f"Total number of samples for training the network: {len(samples)}")
     comm_gen.Barrier()
     samples = reformat_samples(samples)

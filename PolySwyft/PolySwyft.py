@@ -12,6 +12,11 @@ from PolySwyft.utils import compute_KL_divergence, resimulate_deadpoints, select
 from PolySwyft.PolySwyft_Settings import PolySwyft_Settings
 import swyft
 import numpy as np
+from pypolychord import PolyChordSettings
+try:
+    from mpi4py import MPI
+except ImportError:
+    raise ImportError("mpi4py is required for PolySwyft!")
 
 class PolySwyft:
     def __init__(self, polyswyftSettings: PolySwyft_Settings, sim: swyft.Simulator,
@@ -48,10 +53,6 @@ class PolySwyft:
         Execute the sequential nested sampling neural ratio estimation cycle.
         :return:
         """
-        try:
-            from mpi4py import MPI
-        except ImportError:
-            raise ImportError("mpi4py is required for PolySwyft!")
         comm_gen = MPI.COMM_WORLD
         rank_gen = comm_gen.Get_rank()
         size_gen = comm_gen.Get_size()
@@ -112,11 +113,6 @@ class PolySwyft:
         self.polyswyftSettings.NRE_num_retrain_rounds = rd - 1
 
     def _cycle(self, rd):
-        try:
-            from mpi4py import MPI
-        except ImportError:
-            raise ImportError("mpi4py is required for PolySwyft!")
-
         comm_gen = MPI.COMM_WORLD
         rank_gen = comm_gen.Get_rank()
         size_gen = comm_gen.Get_size()

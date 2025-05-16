@@ -35,6 +35,7 @@ def plot_analysis_of_NSNRE(root: str, network_storage: Dict[int, swyft.SwyftModu
     params_labels = {i: rf"${polyswyftSettings.targetKey}_{i}$" for i in range(polyswyftSettings.num_features)}
 
     dkl_storage_true = {}
+    dkl_compression_storage = {}
 
     # triangle plot
     if polyswyftSettings.plot_triangle_plot:
@@ -48,7 +49,7 @@ def plot_analysis_of_NSNRE(root: str, network_storage: Dict[int, swyft.SwyftModu
             prior.plot_2d(axes=axes, alpha=0.4, label="prior", kinds=kinds)
         for rd in range(polyswyftSettings.triangle_start, polyswyftSettings.NRE_num_retrain_rounds + 1):
             nested = samples_storage[rd]
-            nested.plot_2d(axes=axes, alpha=0.4, label=fr"$p(\theta|D)_{rd}$",
+            nested.plot_2d(axes=axes, alpha=0.4, label=fr"$p_{rd}(\theta|D)$",
                            kinds=kinds)
         if true_posterior is not None:
             true_posterior.plot_2d(axes=axes, alpha=0.9, label="true", color="red",
@@ -61,6 +62,8 @@ def plot_analysis_of_NSNRE(root: str, network_storage: Dict[int, swyft.SwyftModu
     # KL divergence plot
     if polyswyftSettings.plot_KL_divergence:
         for rd in range(0, polyswyftSettings.NRE_num_retrain_rounds + 1):
+            DKL = compute_KL_compression(samples_storage[rd], polyswyftSettings)
+            dkl_compression_storage[rd] = DKL
             if true_posterior is not None:
                 previous_network = network_storage[rd]
                 KDL_true = compute_KL_divergence_truth(polyswyftSettings=polyswyftSettings,
@@ -70,30 +73,31 @@ def plot_analysis_of_NSNRE(root: str, network_storage: Dict[int, swyft.SwyftModu
                 dkl_storage_true[rd] = KDL_true
         plt.figure(figsize=(3.5, 3.5))
 
+        ### plot KL(P_i||P_{i-1})
         plt.errorbar(x=[i for i in range(1, polyswyftSettings.NRE_num_retrain_rounds + 1)],
                      y=[dkl_storage[i][0] for i in range(1, polyswyftSettings.NRE_num_retrain_rounds + 1)],
                      yerr=[dkl_storage[i][1] for i in range(1, polyswyftSettings.NRE_num_retrain_rounds + 1)],
                      label=r"$\mathrm{KL} (\mathcal{P}_i||\mathcal{P}_{i-1})$")
-        if true_posterior is not None:
-            plt.errorbar(x=[i for i in range(0, polyswyftSettings.NRE_num_retrain_rounds + 1)],
-                         y=[dkl_storage_true[i][0] for i in range(0, polyswyftSettings.NRE_num_retrain_rounds + 1)],
-                         yerr=[dkl_storage_true[i][1] for i in range(0, polyswyftSettings.NRE_num_retrain_rounds + 1)],
-                         label=r"$\mathrm{KL}(\mathcal{P}_{\mathrm{True}}||\mathcal{P}_i)$")
-
-            logPi = polyswyftSettings.model.prior().logpdf(true_posterior.iloc[:, :polyswyftSettings.num_features].to_numpy())
-            logP = polyswyftSettings.model.posterior(obs[polyswyftSettings.obsKey].squeeze()).logpdf(true_posterior)
-            dkl_compression_truth = 1/logP.shape[0]*((logP - logPi).sum())
-            plt.hlines(y=dkl_compression_truth, xmin=0, xmax=polyswyftSettings.NRE_num_retrain_rounds, color="red",
-                               label=r"$\mathrm{KL}(\mathcal{P}_{\mathrm{True}}||\pi)$",linestyle="--")
-
-        dkl_compression_storage = {}
-        for rd in range(0, polyswyftSettings.NRE_num_retrain_rounds + 1):
-            DKL = compute_KL_compression(samples_storage[rd], polyswyftSettings)
-            dkl_compression_storage[rd] = DKL
+        ### plot KL(P_i||Pi)
         plt.errorbar(x=[i for i in range(0, polyswyftSettings.NRE_num_retrain_rounds + 1)],
                      y=[dkl_compression_storage[i][0] for i in range(0, polyswyftSettings.NRE_num_retrain_rounds + 1)],
                      yerr=[dkl_compression_storage[i][1] for i in range(0, polyswyftSettings.NRE_num_retrain_rounds + 1)],
                      label=r"$\mathrm{KL}(\mathcal{P}_i||\pi)$")
+
+        if true_posterior is not None and polyswyftSettings.model is not None:
+            ### plot KL(P_true||P_i)
+            plt.errorbar(x=[i for i in range(0, polyswyftSettings.NRE_num_retrain_rounds + 1)],
+                         y=[dkl_storage_true[i][0] for i in range(0, polyswyftSettings.NRE_num_retrain_rounds + 1)],
+                         yerr=[dkl_storage_true[i][1] for i in range(0, polyswyftSettings.NRE_num_retrain_rounds + 1)],
+                         label=r"$\mathrm{KL}(\mathcal{P}_{\mathrm{True}}||\mathcal{P}_i)$")
+            ### plot KL(P_true||Pi)
+            true_posterior_samples = true_posterior.iloc[:, :polyswyftSettings.num_features].to_numpy()
+            logPi = polyswyftSettings.model.prior().logpdf(true_posterior_samples)
+            logP = polyswyftSettings.model.posterior(obs[polyswyftSettings.obsKey].squeeze()).logpdf(true_posterior_samples)
+            dkl_compression_truth = 1/logP.shape[0]*((logP - logPi).sum())
+            plt.hlines(y=dkl_compression_truth, xmin=0, xmax=polyswyftSettings.NRE_num_retrain_rounds, color="red",
+                               label=r"$\mathrm{KL}(\mathcal{P}_{\mathrm{True}}||\pi)$",linestyle="--")
+
         plt.legend()
         plt.xlabel("retrain round")
         plt.ylabel("KL divergence")
