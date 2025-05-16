@@ -89,7 +89,7 @@ def plot_analysis_of_NSNRE(root: str, network_storage: Dict[int, swyft.SwyftModu
             plt.errorbar(x=[i for i in range(0, polyswyftSettings.NRE_num_retrain_rounds + 1)],
                          y=[dkl_storage_true[i][0] for i in range(0, polyswyftSettings.NRE_num_retrain_rounds + 1)],
                          yerr=[dkl_storage_true[i][1] for i in range(0, polyswyftSettings.NRE_num_retrain_rounds + 1)],
-                         label=r"$\mathrm{KL}(\mathcal{P}_{\mathrm{True}}||\mathcal{P}_i)$")
+                         label=r"$\mathrm{KL}(\mathcal{P}_{\mathrm{True}}||\mathcal{P}_i)$", linestyle="--")
             ### plot KL(P_true||Pi)
             true_posterior_samples = true_posterior.iloc[:, :polyswyftSettings.num_features].to_numpy()
             logPi = polyswyftSettings.model.prior().logpdf(true_posterior_samples)
