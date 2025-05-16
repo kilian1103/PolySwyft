@@ -1,8 +1,8 @@
 class PolySwyft_Settings:
-    def __init__(self):
+    def __init__(self, root):
         """NRE initialisation.
         """
-        self.root = "PolySwyft_example_run"
+        self.root = root
         # root directory
         self.child_root = "round"  # root for each round: {root}/{child_root}
         self.wandb_project_name = self.root

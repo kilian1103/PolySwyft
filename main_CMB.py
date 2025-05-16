@@ -24,7 +24,8 @@ def main():
     rank_gen = comm_gen.Get_rank()
     size_gen = comm_gen.Get_size()
 
-    polyswyftSettings = PolySwyft_Settings()
+    root = "CMB_PolySwyft"
+    polyswyftSettings = PolySwyft_Settings(root)
     seed_everything(polyswyftSettings.seed, workers=True)
     logging.basicConfig(filename=polyswyftSettings.logger_name, level=logging.INFO,
                         filemode="w")
