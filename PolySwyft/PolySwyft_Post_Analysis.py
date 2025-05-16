@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import swyft
 from anesthetic import make_2d_axes
-
 from PolySwyft.PolySwyft_Settings import PolySwyft_Settings
 from PolySwyft.utils import compute_KL_compression, compute_KL_divergence_truth
 

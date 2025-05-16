@@ -5,10 +5,13 @@ from PolySwyft.PolySwyft_Dataloader import PolySwyftDataModule
 import pypolychord
 import wandb
 from pytorch_lightning.loggers import WandbLogger
-
-from PolySwyft.utils import *
+import os
+import torch
+import anesthetic
+from PolySwyft.utils import compute_KL_divergence, resimulate_deadpoints, select_weighted_contour, reload_data_for_plotting
 from PolySwyft.PolySwyft_Settings import PolySwyft_Settings
 import swyft
+import numpy as np
 
 class PolySwyft:
     def __init__(self, polyswyftSettings: PolySwyft_Settings, sim: swyft.Simulator,
