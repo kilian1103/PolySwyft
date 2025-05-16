@@ -1,6 +1,14 @@
-# Nested sampling Neural Ratio estimator
+# Nested sampling Neural Ratio estimator (NSNRE)
 
-### Ongoing Ph.D. project
+# PolySwyft
 
-Implementing a nested sampler neural ratio estimator to build my first likelihood-free inference algorithm. Written
-in ``pytorch``.
+An implementation of a Nested Sampling Neural-Ratio-Estimator (NSNRE) using ``pypolychord``
+and ``swyft`` named ``PolySwyft``in ``pytorch``.
+
+This repository contains a self-contained example of ``PolySwyft`` that is executed via the ``main_xxx.py`` files.
+
+The example of the publication "PolySwyft: A Nested Sampling Neural-Ratio-Estimator" are these ``main_xxx.py`` files.
+
+For anyone wanting to have a more customisable version of the code, please refer to the notebook
+``main.ipynb``. This notebook contains the same workflow as the ``main_xxx.py`` files, but is more modular and allows for easier experimentation.
+
