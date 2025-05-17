@@ -7,17 +7,17 @@ from torch.utils.data import DataLoader, random_split
 import numpy as np
 from typing import Callable, Optional
 class PolySwyftSequential(Dataset):
-    def __init__(self, polyswyftSettings, rd, index_subset=None, on_after_load_sample: Optional[Callable] =None):
-        self.ps = polyswyftSettings
+    def __init__(self, polyswyftSettings: PolySwyft_Settings, rd, index_subset=None, on_after_load_sample: Optional[Callable] =None):
+        self.polyswyftSettings = polyswyftSettings
         self.rd = rd
         self.on_after_load_sample = on_after_load_sample
         self.round_data = {}
         self.index_map = []
 
         for round_id in range(self.rd + 1):
-            round_dir = os.path.join(self.ps.root, f"round_{round_id}")
-            theta_path = os.path.join(round_dir, "thetas.npy")
-            obs_path = os.path.join(round_dir, "Ds.npy")
+            round_dir = os.path.join(self.polyswyftSettings.root, f"round_{round_id}")
+            theta_path = os.path.join(round_dir, f"{self.polyswyftSettings.targetKey}.npy")
+            obs_path = os.path.join(round_dir, f"{self.polyswyftSettings.obsKey}.npy")
 
             thetas = np.load(theta_path, mmap_mode='r')  # memory-efficient numpy mmap
             obs = np.load(obs_path, mmap_mode='r')
@@ -25,8 +25,8 @@ class PolySwyftSequential(Dataset):
             assert thetas.shape[0] == obs.shape[0], f"Mismatch in round {round_id}"
 
             self.round_data[round_id] = {
-                self.ps.targetKey: thetas,
-                self.ps.obsKey: obs
+                self.polyswyftSettings.targetKey: thetas,
+                self.polyswyftSettings.obsKey: obs
             }
 
             self.index_map.extend([(round_id, i) for i in range(thetas.shape[0])])
@@ -42,8 +42,8 @@ class PolySwyftSequential(Dataset):
         data = self.round_data[rd]
 
         sample = {
-            self.ps.targetKey: torch.tensor(data[self.ps.targetKey][i]).float(),
-            self.ps.obsKey: torch.tensor(data[self.ps.obsKey][i]).float(),
+            self.polyswyftSettings.targetKey: torch.tensor(data[self.polyswyftSettings.targetKey][i]).float(),
+            self.polyswyftSettings.obsKey: torch.tensor(data[self.polyswyftSettings.obsKey][i]).float(),
         }
 
         if self.on_after_load_sample:
@@ -66,7 +66,7 @@ class PolySwyftDataModule(pl.LightningDataModule):
             on_after_load_sample=None,
     ):
         super().__init__()
-        self.ps = polyswyftSettings
+        self.polyswyftSettings = polyswyftSettings
         self.rd = rd
         self.batch_size = batch_size
         self.num_workers = num_workers
@@ -77,7 +77,7 @@ class PolySwyftDataModule(pl.LightningDataModule):
 
     def setup(self, stage=None):
         full_dataset = PolySwyftSequential(
-            polyswyftSettings=self.ps,
+            polyswyftSettings=self.polyswyftSettings,
             rd=self.rd,
             on_after_load_sample=self.on_after_load_sample,
         )

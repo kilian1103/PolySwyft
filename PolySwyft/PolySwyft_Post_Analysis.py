@@ -65,9 +65,9 @@ def plot_analysis_of_NSNRE(root: str, network_storage: Dict[int, swyft.SwyftModu
             DKL = compute_KL_compression(samples_storage[rd], polyswyftSettings)
             dkl_compression_storage[rd] = DKL
             if true_posterior is not None:
-                previous_network = network_storage[rd]
+                current_network = network_storage[rd]
                 KDL_true = compute_KL_divergence_truth(polyswyftSettings=polyswyftSettings,
-                                                       previous_network=previous_network.eval(),
+                                                       previous_network=current_network.eval(),
                                                        true_posterior=true_posterior.copy(), obs=obs,
                                                        previous_samples=samples_storage[rd])
                 dkl_storage_true[rd] = KDL_true

@@ -57,12 +57,12 @@ def compute_KL_divergence(polyswyftSettings: PolySwyft_Settings, previous_networ
     return DKL, DKL_err
 
 
-def compute_KL_divergence_truth(polyswyftSettings: PolySwyft_Settings, previous_network: swyft.SwyftModule,
+def compute_KL_divergence_truth(polyswyftSettings: PolySwyft_Settings, network: swyft.SwyftModule,
                                 true_posterior: anesthetic.Samples, previous_samples: anesthetic.Samples,
                                 obs: swyft.Sample) -> Tuple[float, float]:
     """Compute the KL divergence between the previous NRE and the true posterior KL(P_{true}||P_{i}).
     :param polyswyftSettings: A PolySwyft_Settings object
-    :param previous_network: A swyft network object
+    :param network: A swyft network object
     :param true_posterior: An anesthetic samples object of the true posterior
     :param previous_samples: An anesthetic samples object of the previous samples
     :param obs: A swyft sample of the observed data
@@ -71,7 +71,7 @@ def compute_KL_divergence_truth(polyswyftSettings: PolySwyft_Settings, previous_
     swyft_samples = {
         polyswyftSettings.targetKey: torch.as_tensor(true_posterior.iloc[:, :polyswyftSettings.num_features].to_numpy())}
     with torch.no_grad():
-        predictions = previous_network(obs, swyft_samples)
+        predictions = network(obs, swyft_samples)
     true_posterior["logR"] = predictions.logratios.numpy().squeeze()
     samples = true_posterior.iloc[:, :polyswyftSettings.num_features].squeeze()
     true_prior = polyswyftSettings.model.prior().logpdf(samples)
@@ -237,7 +237,7 @@ def resimulate_deadpoints(deadpoints: np.ndarray, polyswyftSettings: PolySwyft_S
     Ds = comm_gen.bcast(Ds, root=0)
     ### save training data for NRE on disk ###
     if rank_gen == 0:
-        np.save(arr=thetas, file=f"{polyswyftSettings.root}/{polyswyftSettings.child_root}_{rd}/thetas.npy")
-        np.save(arr=Ds, file=f"{polyswyftSettings.root}/{polyswyftSettings.child_root}_{rd}/Ds.npy")
+        np.save(arr=thetas, file=f"{polyswyftSettings.root}/{polyswyftSettings.child_root}_{rd}/{polyswyftSettings.targetKey}.npy")
+        np.save(arr=Ds, file=f"{polyswyftSettings.root}/{polyswyftSettings.child_root}_{rd}/{polyswyftSettings.obsKey}.npy")
     comm_gen.Barrier()
     return thetas, Ds
