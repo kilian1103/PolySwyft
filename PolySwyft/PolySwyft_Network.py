@@ -39,7 +39,7 @@ class Network(swyft.SwyftModule):
 
     def logLikelihood(self, theta: np.ndarray) -> Tuple[Any, List]:
         """Computes the loglikelihood ("NRE") of the given theta."""
-        theta = torch.as_tensor(theta)
+        theta = torch.tensor(theta)
         # check if list of datapoints or single datapoint
         if theta.ndim == 1:
             theta = theta.unsqueeze(0)
