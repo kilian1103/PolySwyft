@@ -30,7 +30,7 @@ def execute():
     polyswyftSettings = PolySwyft_Settings()
     seed_everything(polyswyftSettings.seed, workers=True)
     logging.basicConfig(filename=polyswyftSettings.logger_name, level=logging.INFO,
-                        filemode="w")
+                        filemode="a")
     logger = logging.getLogger()
     polyswyftSettings.logger = logger
     logger.info('Started')
