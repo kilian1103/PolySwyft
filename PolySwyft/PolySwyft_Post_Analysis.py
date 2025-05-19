@@ -69,7 +69,7 @@ def plot_analysis_of_NSNRE(root: str, network_storage: Dict[int, swyft.SwyftModu
                 KDL_true = compute_KL_divergence_truth(polyswyftSettings=polyswyftSettings,
                                                        network=current_network.eval(),
                                                        true_posterior=true_posterior.copy(), obs=obs,
-                                                       previous_samples=samples_storage[rd])
+                                                       samples=samples_storage[rd])
                 dkl_storage_true[rd] = KDL_true
         plt.figure(figsize=(3.5, 3.5))
 

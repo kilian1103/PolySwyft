@@ -58,13 +58,13 @@ def compute_KL_divergence(polyswyftSettings: PolySwyft_Settings, previous_networ
 
 
 def compute_KL_divergence_truth(polyswyftSettings: PolySwyft_Settings, network: swyft.SwyftModule,
-                                true_posterior: anesthetic.Samples, previous_samples: anesthetic.Samples,
+                                true_posterior: anesthetic.Samples, samples: anesthetic.Samples,
                                 obs: swyft.Sample) -> Tuple[float, float]:
     """Compute the KL divergence between the previous NRE and the true posterior KL(P_{true}||P_{i}).
     :param polyswyftSettings: A PolySwyft_Settings object
     :param network: A swyft network object
     :param true_posterior: An anesthetic samples object of the true posterior
-    :param previous_samples: An anesthetic samples object of the previous samples
+    :param samples: An anesthetic samples object of the previous samples
     :param obs: A swyft sample of the observed data
     :return: A tuple of the KL divergence and the error
     """
@@ -73,14 +73,13 @@ def compute_KL_divergence_truth(polyswyftSettings: PolySwyft_Settings, network: 
     with torch.no_grad():
         predictions = network(obs, swyft_samples)
     true_posterior["logR"] = predictions.logratios.numpy().squeeze()
-    samples = true_posterior.iloc[:, :polyswyftSettings.num_features].squeeze()
-    true_prior = polyswyftSettings.model.prior().logpdf(samples)
-    true_posterior_logL = polyswyftSettings.model.posterior(obs[polyswyftSettings.obsKey].numpy().squeeze()).logpdf(samples)
+    true_posterior_samples = true_posterior.iloc[:, :polyswyftSettings.num_features].squeeze()
+    true_prior = polyswyftSettings.model.prior().logpdf(true_posterior_samples)
+    true_posterior_logL = polyswyftSettings.model.posterior(obs[polyswyftSettings.obsKey].numpy().squeeze()).logpdf(true_posterior_samples)
     true_posterior["logL"] = true_posterior_logL
 
     logpqs = (true_posterior["logL"].values[:, None] - true_posterior["logR"].values[:, None] - true_prior[:,
-                                                                                                None] +
-              previous_samples.logZ(
+                                                                                                None] +samples.logZ(
                   polyswyftSettings.n_DKL_estimates).values)
     DKL_estimates = logpqs.mean(axis=0)
     DKL = DKL_estimates.mean()
