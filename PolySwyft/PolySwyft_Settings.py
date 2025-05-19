@@ -11,12 +11,7 @@ class PolySwyft_Settings:
         self.seed = 234
         self.activate_wandb = True
         self.wandb_kwargs = {
-            'project': self.wandb_project_name,
-            'finish': {
-                'exit_code': None,
-                'quiet': None
-            }
-        }
+            'project': self.wandb_project_name}
         # simulator settings
         self.n_training_samples = 10_000  # nsamples for initial training using simulator
         self.n_weighted_samples = 1_000  # nsamples for evaluating NREs
@@ -38,7 +33,7 @@ class PolySwyft_Settings:
             'fractions': [0.8, 0.1, 0.1],
             'batch_size': 64,
             'shuffle': False,
-            'num_workers': 2
+            'num_workers': 0
         }
         self.trainer_kwargs = {"accelerator": 'cpu',
                                "devices": 60,

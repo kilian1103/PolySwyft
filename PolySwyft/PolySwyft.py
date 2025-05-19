@@ -128,11 +128,6 @@ class PolySwyft:
 
         ### setup wandb ###
         if self.polyswyftSettings.activate_wandb:
-            try:
-                self.finish_kwargs = self.polyswyftSettings.wandb_kwargs.pop("finish")
-            except KeyError:
-                self.finish_kwargs = {'exit_code': None,
-                                      'quiet': None}
             self.polyswyftSettings.wandb_kwargs["name"] = f"{self.polyswyftSettings.child_root}_{rd}"
             self.polyswyftSettings.wandb_kwargs["save_dir"] = f"{self.polyswyftSettings.root}/{self.polyswyftSettings.child_root}_{rd}"
             wandb_logger = WandbLogger(**self.polyswyftSettings.wandb_kwargs)
@@ -162,7 +157,7 @@ class PolySwyft:
         trainer.fit(network, dm)
         comm_gen.Barrier()
         if self.polyswyftSettings.activate_wandb and rank_gen == 0:
-            wandb.finish(**self.finish_kwargs)
+            wandb.finish()
 
         ### save network on disk ###
         if rank_gen == 0:
