@@ -109,6 +109,9 @@ class PolySwyft:
         ### create root folder ###
         os.makedirs(root,exist_ok=True)
 
+        ### generate training data using deadpoints
+        resimulate_deadpoints(deadpoints=self.deadpoints_samples, polyswyftSettings=self.polyswyftSettings, sim=self.sim, rd=rd)
+
         ### setup wandb ###
         if self.polyswyftSettings.activate_wandb:
             self.polyswyftSettings.wandb_kwargs["name"] = f"{self.polyswyftSettings.child_root}_{rd}"
@@ -121,7 +124,7 @@ class PolySwyft:
         self.polyswyftSettings.trainer_kwargs["callbacks"] = self.callbacks()
         trainer = swyft.SwyftTrainer(**self.polyswyftSettings.trainer_kwargs)
 
-        ### setup network and train network###
+        ### setup network
         if self.polyswyftSettings.continual_learning_mode:
             network = self.network_model
         else:
@@ -132,8 +135,7 @@ class PolySwyft:
             learning_rate = self.lr_round_scheduler(rd) #between rounds
             self.network_model.optimizer_init.optim_args = dict(lr=learning_rate)
 
-        resimulate_deadpoints(deadpoints=self.deadpoints_samples, polyswyftSettings=self.polyswyftSettings, sim=self.sim, rd=rd)
-
+        ### train network
         dm = PolySwyftDataModule(polyswyftSettings=self.polyswyftSettings,rd=rd,
                                  **self.polyswyftSettings.dm_kwargs)
         network.train()
@@ -152,9 +154,9 @@ class PolySwyft:
         ### load network on disk (to sync across nodes) ###
         if self.polyswyftSettings.continual_learning_mode:
             self.network_model.load_state_dict(torch.load(f"{root}/{self.polyswyftSettings.neural_network_file}"))
-
-        ### save network and root in memory###
         comm_gen.Barrier()
+
+        ### prepare network for inference ###
         network.eval()
 
         ### start polychord section ###
@@ -169,11 +171,10 @@ class PolySwyft:
                                   prior=network.prior, dumper=network.dumper)
         comm_gen.Barrier()
 
-        ### load deadpoints and compute KL divergence and reassign to training samples ###
         deadpoints = anesthetic.read_chains(root=f"{root}/{self.polyset.file_root}")
         comm_gen.Barrier()
 
-        ### polychord round 2 section ###
+        ### polychord round 2 section (optional for dynamic nested sampling)###
         if self.polyswyftSettings.use_livepoint_increasing:
 
             ### choose contour to increase livepoints ###
@@ -181,10 +182,7 @@ class PolySwyft:
                                             threshold=1 - self.polyswyftSettings.livepoint_increase_posterior_contour)
             logL = deadpoints.iloc[index, :].logL
 
-            try:
-                os.makedirs(f"{root}/{self.polyswyftSettings.increased_livepoints_fileroot}")
-            except OSError:
-                self.logger.info("root folder already exists!")
+            os.makedirs(f"{root}/{self.polyswyftSettings.increased_livepoints_fileroot}", exist_ok=True)
 
             ### run polychord round 2 ###
             self.polyset.base_dir = f"{root}/{self.polyswyftSettings.increased_livepoints_fileroot}"
@@ -204,6 +202,7 @@ class PolySwyft:
         self.root_storage[rd] = root
         self.samples_storage[self.current_key] = deadpoints
         self.network_storage[self.current_key] = network
+
         #### compute KL(P_i||P_(i-1))
         if rd > 0:
             previous_network = self.network_storage[self.previous_key]
@@ -235,17 +234,3 @@ class PolySwyft:
         self.deadpoints_samples = deadpoints_samples
         return
 
-    def _reload_data(self):
-        root_storage, network_storage, samples_storage, dkl_storage = reload_data_for_plotting(
-            polyswyftSettings=self.polyswyftSettings,
-            network=self.network_model,
-            polyset=self.polyset,
-            until_round=self.polyswyftSettings.NRE_start_from_round - 1,
-            only_last_round=True)
-        self.root_storage = root_storage
-        self.network_storage = network_storage
-        self.samples_storage = samples_storage
-        self.dkl_storage = dkl_storage
-
-        del self.network_storage[self.polyswyftSettings.NRE_start_from_round - 2]
-        del self.samples_storage[self.polyswyftSettings.NRE_start_from_round - 2]
