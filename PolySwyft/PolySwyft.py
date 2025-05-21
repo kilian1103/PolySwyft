@@ -76,8 +76,10 @@ class PolySwyft:
             root = f"{self.polyswyftSettings.root}/{self.polyswyftSettings.child_root}_{self.polyswyftSettings.NRE_start_from_round-1}"
             deadpoints = anesthetic.read_chains(root=f"{root}/{self.polyset.file_root}")
             self.deadpoints_samples = deadpoints.iloc[:, :self.polyswyftSettings.num_features].to_numpy()
-            self.network_model.load_state_dict(torch.load(f"{root}/{self.polyswyftSettings.neural_network_file}"))
-            self.network_storage[self.previous_key] = self.network_model
+            network = self.network_model.get_new_network()
+            network(torch.load(f"{root}/{self.polyswyftSettings.neural_network_file}"))
+            self.root_storage[self.polyswyftSettings.NRE_start_from_round-1] = root
+            self.network_storage[self.previous_key] = network
             self.samples_storage[self.previous_key] = deadpoints
 
         ### execute main cycle ###
@@ -125,15 +127,15 @@ class PolySwyft:
         trainer = swyft.SwyftTrainer(**self.polyswyftSettings.trainer_kwargs)
 
         ### setup network
-        if self.polyswyftSettings.continual_learning_mode:
-            network = self.network_model
-        else:
-            network = self.network_model.get_new_network()
+        network = self.network_model.get_new_network()
+        if self.polyswyftSettings.continual_learning_mode and rd > 0:
+            prev_root = self.root_storage[rd - 1]
+            network.load_state_dict(torch.load(torch.load(f"{prev_root}/{self.polyswyftSettings.neural_network_file}")))
 
         ### continue lr rate at last point
         if self.lr_round_scheduler is not None:
             learning_rate = self.lr_round_scheduler(rd) #between rounds
-            self.network_model.optimizer_init.optim_args = dict(lr=learning_rate)
+            network.optimizer_init.optim_args = dict(lr=learning_rate)
 
         ### train network
         dm = PolySwyftDataModule(polyswyftSettings=self.polyswyftSettings,rd=rd,
@@ -153,7 +155,7 @@ class PolySwyft:
 
         ### load network on disk (to sync across nodes) ###
         if self.polyswyftSettings.continual_learning_mode:
-            self.network_model.load_state_dict(torch.load(f"{root}/{self.polyswyftSettings.neural_network_file}"))
+            network.load_state_dict(torch.load(f"{root}/{self.polyswyftSettings.neural_network_file}"))
         comm_gen.Barrier()
 
         ### prepare network for inference ###
