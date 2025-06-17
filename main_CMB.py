@@ -1,10 +1,10 @@
-
 import logging
-import sys
 
 import anesthetic
-import matplotlib.pyplot as plt
+import numpy as np
 import pypolychord
+import swyft
+import torch
 from cmblike.cmb import CMB
 from cmblike.noise import planck_noise
 from mpi4py import MPI
@@ -12,11 +12,12 @@ from pytorch_lightning import seed_everything
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
+from PolySwyft.PolySwyft import PolySwyft
 from PolySwyft.PolySwyft_Network_CMB import Network
 from PolySwyft.PolySwyft_Post_Analysis import plot_analysis_of_NSNRE
+from PolySwyft.PolySwyft_Settings import PolySwyft_Settings
 from PolySwyft.PolySwyft_Simulator_CMB import Simulator
-from PolySwyft.PolySwyft import PolySwyft
-from PolySwyft.utils import *
+from PolySwyft.utils import reload_data_for_plotting
 
 
 def main():
@@ -46,26 +47,26 @@ def main():
     first_bin_width = 1
     second_bin_width = 30
     divider = 30
-    #bins = np.array([np.arange(2, l_max, 1), np.arange(2, l_max, 1)]).T  # 2 to 2508 unbinned
+    # bins = np.array([np.arange(2, l_max, 1), np.arange(2, l_max, 1)]).T  # 2 to 2508 unbinned
     first_bins = np.array([np.arange(2, divider, first_bin_width), np.arange(2, divider, first_bin_width)]).T  # 2 to 29
     second_bins = np.array([np.arange(divider, l_max - second_bin_width, second_bin_width),
                             np.arange(divider + second_bin_width, l_max, second_bin_width)]).T  # 30 to 2508
     last_bin = np.array([[second_bins[-1, 1], l_max]])  # remainder
     bins = np.concatenate([first_bins, second_bins, last_bin])
-    #bin_centers = bins[:, 0]
+    # bin_centers = bins[:, 0]
     bin_centers = np.concatenate([first_bins[:, 0], np.mean(bins[divider - 2:], axis=1)])
     l = bin_centers.copy()
     polyswyftSettings.num_features_dataset = len(l)
 
-
     # planck noise
-    #pnoise, _ = planck_noise().calculate_noise()
+    # pnoise, _ = planck_noise().calculate_noise()
     pnoise = None
 
     # binned planck data, not using real data for now
-    #planck = np.loadtxt('data/planck_unbinned.txt', usecols=[1])
-    #planck = cmbs.rebin(planck, bins=bins)
-    sim = Simulator(polyswyftSettings=polyswyftSettings, cmbs=cmbs, bins=bins, bin_centers=bin_centers, p_noise=pnoise, cp=cp)
+    # planck = np.loadtxt('data/planck_unbinned.txt', usecols=[1])
+    # planck = cmbs.rebin(planck, bins=bins)
+    sim = Simulator(polyswyftSettings=polyswyftSettings, cmbs=cmbs, bins=bins, bin_centers=bin_centers, p_noise=pnoise,
+                    cp=cp)
     # obs = swyft.Sample(x=torch.as_tensor(planck)[None, :])
 
     # ['omegabh2', 'omegach2', 'tau', 'ns', 'As', 'h']
@@ -99,11 +100,12 @@ def main():
                                               filename='NRE_{epoch}_{val_loss:.2f}_{train_loss:.2f}', mode='min')
         return [early_stopping_callback, lr_monitor, checkpoint_callback]
 
-    def lr_round_scheduler(rd: int)-> float:
-        lr = polyswyftSettings.learning_rate_init * (polyswyftSettings.learning_rate_decay ** (polyswyftSettings.early_stopping_patience *rd))
+    def lr_round_scheduler(rd: int) -> float:
+        lr = polyswyftSettings.learning_rate_init * (
+                    polyswyftSettings.learning_rate_decay ** (polyswyftSettings.early_stopping_patience * rd))
         return lr
 
-    def compress_deadpoints(deadpoints: anesthetic.NestedSamples, rd: int)-> anesthetic.NestedSamples:
+    def compress_deadpoints(deadpoints: anesthetic.NestedSamples, rd: int) -> anesthetic.NestedSamples:
         return deadpoints.posterior_points()
 
     #### set up polychord settings
@@ -114,7 +116,8 @@ def main():
     polyset.nfail = polyswyftSettings.n_training_samples
     polyset.nlive = polyswyftSettings.num_features * 100
     polySwyft = PolySwyft(polyswyftSettings=polyswyftSettings, sim=sim, obs=obs, deadpoints=deadpoints,
-                          network=network, polyset=polyset, callbacks=create_callbacks, lr_round_scheduler=lr_round_scheduler)
+                          network=network, polyset=polyset, callbacks=create_callbacks,
+                          lr_round_scheduler=lr_round_scheduler)
 
     if not polyswyftSettings.only_plot_mode:
         ### execute main cycle of NSNRE
