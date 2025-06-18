@@ -23,7 +23,7 @@ conda create -n venv python=3.11
 
 The following steps will guide you through the installation of the required Python packages and libraries for this
 project. The versioning for certain packages is critical for compatibility.
-The environment is a minimally viable Conda environment that can be used to run the main.ipynb noetbook in this
+The environment is a minimally viable Conda environment that can be used to run the main.ipynb notebook in this
 repository.
 
 ### 1. Initial Package Installation
