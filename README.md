@@ -31,7 +31,7 @@ repository.
 First, install the core Python dependencies with specific versions using `pip`:
 
 ```bash
-pip install swyft==0.4.4 typing wandb anesthetic scikit-learn lsbi==0.9.0 mpi4py cosmopower jupyter notebook numpy==1.26.4 scipy==1.10.1
+pip install swyft==0.4.4 typing wandb anesthetic lsbi==0.9.0 mpi4py cosmopower jupyter notebook numpy==1.26.4 scipy==1.10.1
 ```
 
 ### 2. Install PolyChordLite
@@ -95,8 +95,9 @@ The code is structured as follows:
   parameters.
 - The ``dumper`` function is optional to monitor runtime progress of ``PolyChord``.
 
-#### 3. A
-``PolySwyft_Dataloader.py`` file that implement the dataloading accross multiple rounds for retraining the network.
+#### 3. A ``PolySwyft_Dataloader.py`` file.
+
+Implementing the dataloading accross multiple rounds for retraining the network.
 
 #### 4. A ``utils.py``file to implement the
 

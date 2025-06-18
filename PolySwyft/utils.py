@@ -1,6 +1,6 @@
 from typing import Dict
 from typing import Tuple
-import sklearn
+
 import anesthetic
 import numpy as np
 import swyft
@@ -9,6 +9,7 @@ from anesthetic import NestedSamples
 from pypolychord import PolyChordSettings
 from scipy.special import logsumexp
 from swyft import collate_output as reformat_samples, Simulator
+
 from PolySwyft.PolySwyft_Settings import PolySwyft_Settings
 
 
@@ -37,7 +38,8 @@ def compute_KL_divergence(polyswyftSettings: PolySwyft_Settings, previous_networ
     :return: A tuple of the KL divergence and the error
     """
 
-    samples = {polyswyftSettings.targetKey: torch.as_tensor(current_samples.iloc[:, :polyswyftSettings.num_features].to_numpy())}
+    samples = {polyswyftSettings.targetKey: torch.as_tensor(
+        current_samples.iloc[:, :polyswyftSettings.num_features].to_numpy())}
     with torch.no_grad():
         predictions = previous_network(obs, samples)
     current_samples["logL_previous"] = predictions.logratios.numpy().squeeze()
@@ -69,18 +71,20 @@ def compute_KL_divergence_truth(polyswyftSettings: PolySwyft_Settings, network: 
     :return: A tuple of the KL divergence and the error
     """
     swyft_samples = {
-        polyswyftSettings.targetKey: torch.as_tensor(true_posterior.iloc[:, :polyswyftSettings.num_features].to_numpy())}
+        polyswyftSettings.targetKey: torch.as_tensor(
+            true_posterior.iloc[:, :polyswyftSettings.num_features].to_numpy())}
     with torch.no_grad():
         predictions = network(obs, swyft_samples)
     true_posterior["logR"] = predictions.logratios.numpy().squeeze()
     true_posterior_samples = true_posterior.iloc[:, :polyswyftSettings.num_features].squeeze()
     true_prior = polyswyftSettings.model.prior().logpdf(true_posterior_samples)
-    true_posterior_logL = polyswyftSettings.model.posterior(obs[polyswyftSettings.obsKey].numpy().squeeze()).logpdf(true_posterior_samples)
+    true_posterior_logL = polyswyftSettings.model.posterior(obs[polyswyftSettings.obsKey].numpy().squeeze()).logpdf(
+        true_posterior_samples)
     true_posterior["logL"] = true_posterior_logL
 
     logpqs = (true_posterior["logL"].values[:, None] - true_posterior["logR"].values[:, None] - true_prior[:,
-                                                                                                None] +samples.logZ(
-                  polyswyftSettings.n_DKL_estimates).values)
+                                                                                                None] + samples.logZ(
+        polyswyftSettings.n_DKL_estimates).values)
     DKL_estimates = logpqs.mean(axis=0)
     DKL = DKL_estimates.mean()
     DKL_err = DKL_estimates.std()
@@ -103,7 +107,8 @@ def compute_KL_compression(samples: anesthetic.NestedSamples, polyswyftSettings:
     return DKL, DKL_err
 
 
-def reload_data_for_plotting(polyswyftSettings: PolySwyft_Settings, network: swyft.SwyftModule, polyset: PolyChordSettings,
+def reload_data_for_plotting(polyswyftSettings: PolySwyft_Settings, network: swyft.SwyftModule,
+                             polyset: PolyChordSettings,
                              until_round: int, only_last_round=False) -> \
         Tuple[
             Dict[int, str], Dict[int, swyft.SwyftModule], Dict[int, anesthetic.NestedSamples], Dict[
@@ -166,9 +171,8 @@ def reload_data_for_plotting(polyswyftSettings: PolySwyft_Settings, network: swy
     return root_storage, network_storage, samples_storage, dkl_storage
 
 
-
 def resimulate_deadpoints(deadpoints: np.ndarray, polyswyftSettings: PolySwyft_Settings,
-                          sim: Simulator,rd: int):
+                          sim: Simulator, rd: int):
     """
     Retrain the network for the next round of NSNRE.
     :param root: A string of the root folder
@@ -192,12 +196,13 @@ def resimulate_deadpoints(deadpoints: np.ndarray, polyswyftSettings: PolySwyft_S
     size_gen = comm_gen.Get_size()
 
     logger.info(
-        f"Simulating joint training dataset ({polyswyftSettings.obsKey}, {polyswyftSettings.targetKey}) using deadpoints with "
+        f"Simulating joint training dataset ({polyswyftSettings.obsKey}, {polyswyftSettings.targetKey}) using "
+        f"deadpoints with "
         f"Simulator!")
 
     ### simulate joint distribution using deadpoints ###
     if size_gen > 1:
-        deadpoints = np.array_split(deadpoints, size_gen)
+        deadpoints = np.array_split(deadpoints, size_gen, axis=0)
         deadpoints = deadpoints[rank_gen]
     samples = []
     for point in deadpoints:
@@ -228,15 +233,19 @@ def resimulate_deadpoints(deadpoints: np.ndarray, polyswyftSettings: PolySwyft_S
     if rank_gen == 0:
         thetas = samples[polyswyftSettings.targetKey]
         Ds = samples[polyswyftSettings.obsKey]
-        joint =  np.array(sklearn.utils.shuffle(list(zip(thetas,Ds))),dtype=object)
-        thetas = np.stack(joint[:, 0])
-        Ds = np.stack(joint[:, 1])
+        theta_dim = thetas.shape[1]
+        combined = np.concatenate((thetas, Ds), axis=1)
+        np.random.shuffle(combined)
+        thetas = combined[:, :theta_dim]
+        Ds = combined[:, theta_dim:]
     comm_gen.Barrier()
     thetas = comm_gen.bcast(thetas, root=0)
     Ds = comm_gen.bcast(Ds, root=0)
     ### save training data for NRE on disk ###
     if rank_gen == 0:
-        np.save(arr=thetas, file=f"{polyswyftSettings.root}/{polyswyftSettings.child_root}_{rd}/{polyswyftSettings.targetKey}.npy")
-        np.save(arr=Ds, file=f"{polyswyftSettings.root}/{polyswyftSettings.child_root}_{rd}/{polyswyftSettings.obsKey}.npy")
+        np.save(arr=thetas,
+                file=f"{polyswyftSettings.root}/{polyswyftSettings.child_root}_{rd}/{polyswyftSettings.targetKey}.npy")
+        np.save(arr=Ds,
+                file=f"{polyswyftSettings.root}/{polyswyftSettings.child_root}_{rd}/{polyswyftSettings.obsKey}.npy")
     comm_gen.Barrier()
     return thetas, Ds
