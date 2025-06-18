@@ -11,6 +11,10 @@ For anyone wanting to have a more customisable version of the code, please refer
 ``main.ipynb``. This notebook contains the same workflow as the ``main_xxx.py`` files, but is more modular and allows
 for easier experimentation.
 
+Note: Ensure that your dim(theta) and dim(D) is of shape (n, dim(theta)) and (n, dim(D)) respectively, where n is the
+number of samples in your Simulator class.
+Particularly if dim(theta) and/or dim(D) = 1.
+
 ## Prerequisites
 
 Before proceeding, ensure you have a working Conda environment.
