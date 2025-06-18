@@ -2,7 +2,7 @@
 
 ## PolySwyft
 
-An implementation of a Nested Sampling Neural-Ratio-Estimator (NSNRE) using ``pypolychord``
+An implementation of a Nested Sampling Neural-Ratio-Estimator (NSNRE) using ``PolyChord``
 and ``swyft`` named ``PolySwyft``in ``pytorch``.
 
 This repository contains a self-contained example of ``PolySwyft`` that is executed via the ``main_xxx.py`` files.
@@ -23,7 +23,7 @@ conda create -n venv python=3.11
 
 The following steps will guide you through the installation of the required Python packages and libraries for this
 project. The versioning for certain packages is critical for compatibility.
-The environment is a minimally viable Conda environment that can be used to run the main.ipynb notebook in this
+The environment is a minimally viable Conda environment that can be used to run the ``main.ipynb`` notebook in this
 repository.
 
 ### 1. Initial Package Installation
@@ -47,7 +47,8 @@ cd ..
 rm -r PolyChordLite
 ```
 
-Note: Installing PolyChord on macOS may encounter issues, use LLMs such as ChatGPT, Claude, or Gemini to help you
+Note: Installing PolyChord on macOS may encounter issues, use LLMs such as Gemini, ChatGPT, Claude, or ChatGPT to help
+you.
 
 ### 3. Install CMB Likelihood
 
@@ -64,7 +65,7 @@ rm -r cmb-likelihood
 ### 4. Setup WandB
 
 As I use [Weights & Biases (WandB)](https://wandb.ai/) for experiment tracking, you need to set up your WandB account
-and login.
+and API key.
 It is free to use for academic purposes. Once set up you need to setup the following environment variable in the ``
 .env.example`` file.
 
