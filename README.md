@@ -96,7 +96,6 @@ The code is structured as follows:
 - The ``dumper`` function is optional to monitor runtime progress of ``PolyChord``.
 
 #### 3. A
-
 ``PolySwyft_Dataloader.py`` file that implement the dataloading accross multiple rounds for retraining the network.
 
 #### 4. A ``utils.py``file to implement the
