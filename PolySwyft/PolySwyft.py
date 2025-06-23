@@ -84,6 +84,7 @@ class PolySwyft:
             self.deadpoints_samples = deadpoints.iloc[:, :self.polyswyftSettings.num_features].to_numpy()
             network = self.network_model.get_new_network()
             network.load_state_dict(torch.load(f"{root}/{self.polyswyftSettings.neural_network_file}"))
+            network.double()
             self.root_storage[self.polyswyftSettings.NRE_start_from_round - 1] = root
             self.network_storage[self.previous_key] = network
             self.samples_storage[self.previous_key] = deadpoints
