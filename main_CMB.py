@@ -1,12 +1,13 @@
 import logging
+import sys
 
 import anesthetic
+import matplotlib.pyplot as plt
 import numpy as np
 import pypolychord
 import swyft
 import torch
 from cmblike.cmb import CMB
-from cmblike.noise import planck_noise
 from mpi4py import MPI
 from pytorch_lightning import seed_everything
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
@@ -24,9 +25,20 @@ def main():
     comm_gen = MPI.COMM_WORLD
     rank_gen = comm_gen.Get_rank()
     size_gen = comm_gen.Get_size()
+    n_lr = int(sys.argv[1])
+    # n_lr = 5
+    # n_lr = 1
+    lrs = {0: 1.00,
+           1: 0.99,
+           2: 0.98,
+           3: 0.97,
+           4: 0.96,
+           5: 0.95}
 
-    root = "CMB_PolySwyft"
+    root = f"CMB_PolySwyft_lr{lrs[n_lr]}"
     polyswyftSettings = PolySwyft_Settings(root)
+    polyswyftSettings.learning_rate_decay = 0.95
+    # polyswyftSettings.num_summary_features = nsum
     seed_everything(polyswyftSettings.seed, workers=True)
     logging.basicConfig(filename=polyswyftSettings.logger_name, level=logging.INFO,
                         filemode="a")
@@ -49,14 +61,16 @@ def main():
     divider = 30
     # bins = np.array([np.arange(2, l_max, 1), np.arange(2, l_max, 1)]).T  # 2 to 2508 unbinned
     first_bins = np.array([np.arange(2, divider, first_bin_width), np.arange(2, divider, first_bin_width)]).T  # 2 to 29
-    second_bins = np.array([np.arange(divider, l_max - second_bin_width, second_bin_width),
-                            np.arange(divider + second_bin_width, l_max, second_bin_width)]).T  # 30 to 2508
-    last_bin = np.array([[second_bins[-1, 1], l_max]])  # remainder
-    bins = np.concatenate([first_bins, second_bins, last_bin])
+    # Correcting bin generation to be non-overlapping [start, end)
+    l_starts = np.arange(divider, l_max, second_bin_width)
+    l_ends = np.arange(divider + second_bin_width, l_max + second_bin_width, second_bin_width)
+    l_ends = np.clip(l_ends, a_min=None, a_max=l_max)  # Ensure last bin doesn't exceed l_max
+    second_bins = np.array([l_starts, l_ends[:len(l_starts)]]).T
+    bins = np.concatenate([first_bins, second_bins])
+    bins[:, 1] += 1
     # bin_centers = bins[:, 0]
     bin_centers = np.concatenate([first_bins[:, 0], np.mean(bins[divider - 2:], axis=1)])
     l = bin_centers.copy()
-    polyswyftSettings.num_features_dataset = len(l)
 
     # planck noise
     # pnoise, _ = planck_noise().calculate_noise()
@@ -73,17 +87,31 @@ def main():
     theta_true = np.array([0.022, 0.12, 0.055, 0.965, 3.0, 0.67])
     sample_true = sim.sample(conditions={polyswyftSettings.targetKey: theta_true})
     obs = swyft.Sample(x=torch.as_tensor(sample_true[polyswyftSettings.obsKey])[None, :])
-
+    polyswyftSettings.num_features_dataset = obs[polyswyftSettings.obsKey].shape[1]
+    # generate dead points
     n_per_core = polyswyftSettings.n_training_samples // size_gen
     seed_everything(polyswyftSettings.seed + rank_gen, workers=True)
     if rank_gen == 0:
         n_per_core += polyswyftSettings.n_training_samples % size_gen
-    deadpoints = sim.sample(n_per_core, targets=[polyswyftSettings.targetKey])[
-        polyswyftSettings.targetKey]
+    joints = sim.sample(n_per_core, targets=[polyswyftSettings.obsKey])
+    deadpoints = joints[polyswyftSettings.targetKey]
+    joints = joints[polyswyftSettings.obsKey]
+
     comm_gen.Barrier()
     seed_everything(polyswyftSettings.seed, workers=True)
     deadpoints = comm_gen.allgather(deadpoints)
     deadpoints = np.concatenate(deadpoints, axis=0)
+    comm_gen.Barrier()
+
+    # preprocess data: log transform and noise normalization
+    joints = comm_gen.allgather(joints)
+    joints = np.concatenate(joints, axis=0)
+    comm_gen.Barrier()
+    joints = joints / obs[polyswyftSettings.obsKey][0].numpy()
+    log_data_mean = np.mean(np.log10(joints), axis=0)
+    log_data_std = np.std(np.log10(joints), axis=0)
+    polyswyftSettings.log_data_mean = log_data_mean
+    polyswyftSettings.log_data_std = log_data_std
     comm_gen.Barrier()
 
     polyswyftSettings.wandb_project_name = polyswyftSettings.root
@@ -122,6 +150,15 @@ def main():
     if not polyswyftSettings.only_plot_mode:
         ### execute main cycle of NSNRE
         polySwyft.execute_NSNRE_cycle()
+
+    # plot observation
+    if rank_gen == 0:
+        plt.plot(l, obs[polyswyftSettings.obsKey][0].numpy(), label='Sim. Observation', c="red")
+        # for i in range(0, joints.shape[0], 1000):
+        # plt.plot(l, joints[i], color='gray', alpha=0.1, label='Sim. Samples')
+        plt.xlabel(r'$\ell$')
+        plt.ylabel(r"$D_\ell$")
+        plt.savefig(f"{polyswyftSettings.root}/obs.pdf", bbox_inches='tight')
 
     root_storage, network_storage, samples_storage, dkl_storage = reload_data_for_plotting(
         polyswyftSettings=polyswyftSettings,

@@ -6,14 +6,13 @@ from PolySwyft.PolySwyft_Settings import PolySwyft_Settings
 
 
 class Simulator(swyft.Simulator):
-    def __init__(self, polyswyftSettings: PolySwyft_Settings, cmbs: CMB, bins, bin_centers, p_noise, cp=False):
+    def __init__(self, polyswyftSettings: PolySwyft_Settings, cmbs: CMB, bin_centers, p_noise, bins=None, cp=False):
         super().__init__()
         self.polyswyftSettings = polyswyftSettings
         self.cmbs = cmbs
         self.bins = bins
         self.bin_centers = bin_centers
         self.p_noise = p_noise
-        self.conversion = self.bin_centers * (self.bin_centers + 1) / (2 * np.pi)
         self.cp = cp
 
     def prior(self):
@@ -22,8 +21,8 @@ class Simulator(swyft.Simulator):
         return theta
 
     def likelihood(self, theta):
-        cltheory, sample = self.cmbs.get_samples(theta, self.bins, noise=self.p_noise, cp=self.cp)
-        return sample * self.conversion
+        cltheory, sample = self.cmbs.get_samples(theta, self.bins, noise=self.p_noise, cp=self.cp, dell_conversion=True)
+        return sample
 
     def build(self, graph):
         # prior

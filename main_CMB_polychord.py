@@ -2,7 +2,6 @@ import logging
 
 import numpy as np
 from cmblike.cmb import CMB
-from cmblike.noise import planck_noise
 from mpi4py import MPI
 from pypolychord import run_polychord, PolyChordSettings
 from pytorch_lightning import seed_everything
@@ -40,11 +39,27 @@ def main():
     divider = 30
     # bins = np.array([np.arange(2, l_max, 1), np.arange(2, l_max, 1)]).T  # 2 to 2508 unbinned
     first_bins = np.array([np.arange(2, divider, first_bin_width), np.arange(2, divider, first_bin_width)]).T  # 2 to 29
-    second_bins = np.array([np.arange(divider, l_max - second_bin_width, second_bin_width),
-                            np.arange(divider + second_bin_width, l_max, second_bin_width)]).T  # 30 to 2508
-    last_bin = np.array([[second_bins[-1, 1], l_max]])  # remainder
-    bins = np.concatenate([first_bins, second_bins, last_bin])
-    # bin_centers = bins[:, 0]
+    # Correcting bin generation to be non-overlapping [start, end)
+    l_starts = np.arange(divider, l_max, second_bin_width)
+    l_ends = np.arange(divider + second_bin_width, l_max + second_bin_width, second_bin_width)
+    l_ends = np.clip(l_ends, a_min=None, a_max=l_max)  # Ensure last bin doesn't exceed l_max
+    second_bins = np.array([l_starts, l_ends[:len(l_starts)]]).T
+    bins = np.concatenate([first_bins, second_bins])
+    bins[:, 1] += 1  # Make upper edge exclusive for arange, e.g. [2,3) for l=2
+    dof_per_bin = []
+    for l_min, l_max_exclusive in bins:
+        ells_in_bin = np.arange(l_min, l_max_exclusive)
+        dof = np.sum(2 * ells_in_bin + 1)
+        dof_per_bin.append(dof)
+
+    dof_per_bin = np.array(dof_per_bin)
+
+    # second_bins = np.array([np.arange(divider, l_max - second_bin_width, second_bin_width),
+    #                         np.arange(divider + second_bin_width, l_max, second_bin_width)]).T  # 30 to 2508
+    # last_bin = np.array([[second_bins[-1, 1], l_max]])  # remainder
+    # bins = np.concatenate([first_bins, second_bins, last_bin])
+    # # bin_centers = bins[:, 0]
+
     bin_centers = np.concatenate([first_bins[:, 0], np.mean(bins[divider - 2:], axis=1)])
     l = bin_centers.copy()
     polyswyftSettings.num_features_dataset = len(l)
@@ -69,7 +84,7 @@ def main():
     nlive = polyswyftSettings.num_features * 100
     polyset = PolyChordSettings(nDims=polyswyftSettings.num_features, nDerived=0, nlive=nlive, base_dir=root)
 
-    loglikelihood = cmbs.get_likelihood(data=Cell, l=l, bins=bins, noise=None, cp=True)
+    loglikelihood = cmbs.get_likelihood(data=Cell, l=l, bins=bins, noise=None, cp=True, dof_per_bin=dof_per_bin)
 
     def prior(cube) -> np.ndarray:
         """Transforms the unit cube to the prior cube."""

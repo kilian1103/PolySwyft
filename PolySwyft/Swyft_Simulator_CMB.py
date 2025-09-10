@@ -1,19 +1,21 @@
 import numpy as np
-import swyft
-#from cmblike.cmb import CMB
 import scipy.stats
+import swyft
+from cmblike.cmb import CMB
+
 from PolySwyft.PolySwyft_Settings import PolySwyft_Settings
 
 
 class Simulator(swyft.Simulator):
-    def __init__(self, polyswyftSettings: PolySwyft_Settings, cmbs, bins, bin_centers, p_noise, prior_mins, prior_maxs,
+    def __init__(self, polyswyftSettings: PolySwyft_Settings, cmbs: CMB, bins, bin_centers, p_noise, prior_mins,
+                 prior_maxs,
                  cp=False, bounds=None):
         super().__init__()
         self.polyswyftSettings = polyswyftSettings
 
         self.prior_rect_sampler = swyft.RectBoundSampler([scipy.stats.uniform(loc=prior_mins,
-                                                                  scale= prior_maxs-prior_mins)],
-                                                            bounds=bounds)
+                                                                              scale=prior_maxs - prior_mins)],
+                                                         bounds=bounds)
         self.cmbs = cmbs
         self.bins = bins
         self.bin_centers = bin_centers
@@ -25,8 +27,8 @@ class Simulator(swyft.Simulator):
         return self.prior_rect_sampler()
 
     def likelihood(self, theta):
-        cltheory, sample = self.cmbs.get_samples(theta, self.bins, noise=self.p_noise, cp=self.cp)
-        return sample * self.conversion
+        cltheory, sample = self.cmbs.get_samples(theta, self.bins, noise=self.p_noise, cp=self.cp, dell_conversion=True)
+        return sample
 
     def build(self, graph):
         # prior

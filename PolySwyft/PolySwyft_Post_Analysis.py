@@ -1,19 +1,20 @@
-
 from typing import Dict, Tuple, Callable
+
 import anesthetic
 import matplotlib.pyplot as plt
 import numpy as np
 import swyft
 from anesthetic import make_2d_axes
+
 from PolySwyft.PolySwyft_Settings import PolySwyft_Settings
 from PolySwyft.utils import compute_KL_compression, compute_KL_divergence_truth
-
 
 
 def plot_analysis_of_NSNRE(root: str, network_storage: Dict[int, swyft.SwyftModule],
                            samples_storage: Dict[int, anesthetic.Samples], dkl_storage: Dict[int, Tuple[float, float]],
                            polyswyftSettings: PolySwyft_Settings,
-                           obs: swyft.Sample, true_posterior: anesthetic.Samples = None, deadpoints_processing: Callable = None):
+                           obs: swyft.Sample, true_posterior: anesthetic.Samples = None,
+                           deadpoints_processing: Callable = None):
     """
     Plot the analysis of the NSNRE.
     :param root: A string of the root directory to save the plots
@@ -81,7 +82,8 @@ def plot_analysis_of_NSNRE(root: str, network_storage: Dict[int, swyft.SwyftModu
         ### plot KL(P_i||Pi)
         plt.errorbar(x=[i for i in range(0, polyswyftSettings.NRE_num_retrain_rounds + 1)],
                      y=[dkl_compression_storage[i][0] for i in range(0, polyswyftSettings.NRE_num_retrain_rounds + 1)],
-                     yerr=[dkl_compression_storage[i][1] for i in range(0, polyswyftSettings.NRE_num_retrain_rounds + 1)],
+                     yerr=[dkl_compression_storage[i][1] for i in
+                           range(0, polyswyftSettings.NRE_num_retrain_rounds + 1)],
                      label=r"$\mathrm{KL}(\mathcal{P}_i||\pi)$")
 
         if true_posterior is not None and polyswyftSettings.model is not None:
@@ -93,17 +95,17 @@ def plot_analysis_of_NSNRE(root: str, network_storage: Dict[int, swyft.SwyftModu
             ### plot KL(P_true||Pi)
             true_posterior_samples = true_posterior.iloc[:, :polyswyftSettings.num_features].to_numpy()
             logPi = polyswyftSettings.model.prior().logpdf(true_posterior_samples)
-            logP = polyswyftSettings.model.posterior(obs[polyswyftSettings.obsKey].squeeze()).logpdf(true_posterior_samples)
-            dkl_compression_truth = 1/logP.shape[0]*((logP - logPi).sum())
+            logP = polyswyftSettings.model.posterior(obs[polyswyftSettings.obsKey].squeeze()).logpdf(
+                true_posterior_samples)
+            dkl_compression_truth = 1 / logP.shape[0] * ((logP - logPi).sum())
             plt.hlines(y=dkl_compression_truth, xmin=0, xmax=polyswyftSettings.NRE_num_retrain_rounds, color="red",
-                               label=r"$\mathrm{KL}(\mathcal{P}_{\mathrm{True}}||\pi)$",linestyle="--")
+                       label=r"$\mathrm{KL}(\mathcal{P}_{\mathrm{True}}||\pi)$", linestyle="--")
 
         plt.legend()
         plt.xlabel("retrain round")
         plt.ylabel("KL divergence")
         plt.savefig(f"{root}/kl_divergence.pdf", dpi=300, bbox_inches='tight')
         plt.close()
-
 
     if polyswyftSettings.plot_statistical_power:
         initial_size = polyswyftSettings.n_training_samples

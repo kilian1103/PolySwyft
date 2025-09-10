@@ -23,6 +23,8 @@ def main():
     size_gen = comm_gen.Get_size()
     root = "CMB_Swyft"
     polyswyftSettings = PolySwyft_Settings(root=root)
+    if rank_gen == 0:
+        os.makedirs(root, exist_ok=True)
     seed_everything(polyswyftSettings.seed, workers=True)
     logging.basicConfig(filename=polyswyftSettings.logger_name, level=logging.INFO,
                         filemode="a")
@@ -45,14 +47,15 @@ def main():
     divider = 30
     # bins = np.array([np.arange(2, l_max, 1), np.arange(2, l_max, 1)]).T  # 2 to 2508 unbinned
     first_bins = np.array([np.arange(2, divider, first_bin_width), np.arange(2, divider, first_bin_width)]).T  # 2 to 29
-    second_bins = np.array([np.arange(divider, l_max - second_bin_width, second_bin_width),
-                            np.arange(divider + second_bin_width, l_max, second_bin_width)]).T  # 30 to 2508
-    last_bin = np.array([[second_bins[-1, 1], l_max]])  # remainder
-    bins = np.concatenate([first_bins, second_bins, last_bin])
+    # Correcting bin generation to be non-overlapping [start, end)
+    l_starts = np.arange(divider, l_max, second_bin_width)
+    l_ends = np.arange(divider + second_bin_width, l_max + second_bin_width, second_bin_width)
+    l_ends = np.clip(l_ends, a_min=None, a_max=l_max)  # Ensure last bin doesn't exceed l_max
+    second_bins = np.array([l_starts, l_ends[:len(l_starts)]]).T
+    bins = np.concatenate([first_bins, second_bins])
+    bins[:, 1] += 1
     # bin_centers = bins[:, 0]
     bin_centers = np.concatenate([first_bins[:, 0], np.mean(bins[divider - 2:], axis=1)])
-    l = bin_centers.copy()
-    polyswyftSettings.num_features_dataset = len(l)
 
     # planck noise
     # pnoise, _ = planck_noise().calculate_noise()
@@ -69,6 +72,7 @@ def main():
     theta_true = np.array([0.022, 0.12, 0.055, 0.965, 3.0, 0.67])
     sample_true = sim.sample(conditions={polyswyftSettings.targetKey: theta_true})
     obs = swyft.Sample(x=torch.as_tensor(sample_true[polyswyftSettings.obsKey])[None, :])
+    polyswyftSettings.num_features_dataset = obs[polyswyftSettings.obsKey].shape[1]
     torch.save(torch.as_tensor(sample_true[polyswyftSettings.obsKey])[None, :], f"{polyswyftSettings.root}/obs.pt")
 
     def create_callbacks() -> list:
@@ -102,6 +106,16 @@ def main():
         comm_gen.Barrier()
         seed_everything(polyswyftSettings.seed + rank_gen, workers=True)
         store.simulate(sim, batch_size=polyswyftSettings.n_weighted_samples)
+
+        # get data mean and std
+        normalised = store[polyswyftSettings.obsKey][:] / obs[polyswyftSettings.obsKey][0].numpy()
+        log_data_mean = np.mean(np.log10(normalised), axis=0)
+        log_data_std = np.std(np.log10(normalised), axis=0)
+        polyswyftSettings.log_data_mean = log_data_mean
+        polyswyftSettings.log_data_std = log_data_std
+        if rank_gen == 0:
+            np.save(f"{root}/log_data_mean.npy", log_data_mean)
+            np.save(f"{root}/log_data_std.npy", log_data_std)
         seed_everything(polyswyftSettings.seed, workers=True)
         comm_gen.Barrier()
 
@@ -133,7 +147,7 @@ def main():
             {polyswyftSettings.targetKey: torch.as_tensor(prior_samples[polyswyftSettings.targetKey])})
         predictions = network(obs_torch, prior_samples_torch)
         new_bounds = swyft.collect_rect_bounds(predictions, polyswyftSettings.targetKey,
-                                               (polyswyftSettings.num_features,), threshold=1e-6)
+                                               (polyswyftSettings.num_features,), threshold=1e-4)
         if rank_gen == 0:
             torch.save(obj=new_bounds, f=f"{root}/new_bounds.pt")
         return predictions, new_bounds
