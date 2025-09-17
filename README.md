@@ -1,46 +1,66 @@
-# Nested sampling Neural Ratio estimator (NSNRE)
+# 🧠 Nested Sampling Neural Ratio Estimator (NSNRE)
 
-## PolySwyft
+<div align="center">
 
-An implementation of a Nested Sampling Neural-Ratio-Estimator (NSNRE) using ``PolyChord``
-and ``swyft`` named ``PolySwyft``in ``pytorch``.
+[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red.svg)](https://pytorch.org)
+[![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
+[![arXiv](https://img.shields.io/badge/arXiv-2024.xxxxx-b31b1b.svg)](https://arxiv.org)
 
-This repository contains a self-contained example of ``PolySwyft`` that is executed via the ``main_xxx.py`` files.
+</div>
 
-For anyone wanting to have a more customisable version of the code, please refer to the notebook
-``main.ipynb``. This notebook contains the same workflow as the ``main_xxx.py`` files, but is more modular and allows
-for easier experimentation.
+## 🚀 PolySwyft
 
-Note: Ensure that your dim(theta) and dim(D) is of shape (n, dim(theta)) and (n, dim(D)) respectively, where n is the
-number of samples in your Simulator class.
-Particularly if dim(theta) and/or dim(D) = 1.
+**PolySwyft** is a cutting-edge implementation of a Nested Sampling Neural-Ratio-Estimator (NSNRE) that combines the
+power of [PolyChord](https://github.com/PolyChord/PolyChordLite) and [swyft](https://github.com/undark-lab/swyft) in a
+PyTorch-based framework.
 
-## Prerequisites
+### ✨ Key Features
 
-Before proceeding, ensure you have a working Conda environment.
+- 🔄 **Sequential Neural Ratio Estimation**: Advanced nested sampling with neural networks
+- 🎯 **Multi-round Training**: Progressive improvement through multiple training rounds
+- 📊 **Comprehensive Diagnostics**: Built-in KL-divergence and convergence monitoring
+- 🔧 **Modular Design**: Easy to customize and extend for different problems
+- 📈 **Experiment Tracking**: Integrated Weights & Biases support
+
+### 📋 Quick Start
+
+This repository contains self-contained examples that can be executed via the `main_xxx.py` files.
+
+For a more customizable experience, check out the **`main.ipynb`** notebook, which provides the same workflow with
+enhanced modularity for easier experimentation.
+
+> ⚠️ **Important**: Ensure your parameter dimensions follow the shape `(n, dim(θ))` and `(n, dim(D))` respectively,
+> where `n` is the number of samples in your Simulator class. This is particularly important when `dim(θ)` and/or
+`dim(D) = 1`.
+
+## 🛠️ Installation
+
+### Prerequisites
+
+Before proceeding, ensure you have a working Conda environment:
 
 ```bash
-conda create -n venv python=3.11
+conda create -n polyswyft python=3.11
+conda activate polyswyft
 ```
 
-## Installation
+### Step-by-Step Installation
 
-The following steps will guide you through the installation of the required Python packages and libraries for this
-project. The versioning for certain packages is critical for compatibility.
-The environment is a minimally viable Conda environment that can be used to run the ``main.ipynb`` notebook in this
-repository.
+The following steps will guide you through installing all required dependencies. **Version compatibility is critical**
+for proper functionality.
 
-### 1. Initial Package Installation
+#### 1️⃣ Core Dependencies
 
-First, install the core Python dependencies with specific versions using `pip`:
+Install the essential Python packages with specific versions:
 
 ```bash
 pip install swyft==0.4.4 typing wandb anesthetic lsbi==0.9.0 mpi4py cosmopower jupyter notebook numpy==1.26.4 scipy==1.10.1
 ```
 
-### 2. Install PolyChordLite
+#### 2️⃣ PolyChordLite Installation
 
-Next, you will need to clone and install PolyChordLite from its GitHub repository:
+Clone and install PolyChordLite from the official repository:
 
 ```bash
 git clone https://github.com/PolyChord/PolyChordLite.git
@@ -51,12 +71,12 @@ cd ..
 rm -r PolyChordLite
 ```
 
-Note: Installing PolyChord on macOS may encounter issues, use LLMs such as Gemini, ChatGPT, Claude, or ChatGPT to help
-you.
+> ⚠️ **macOS Users**: PolyChord installation on macOS may encounter issues. Consider using LLMs (Gemini, ChatGPT,
+> Claude) for troubleshooting specific macOS-related problems.
 
-### 3. Install CMB Likelihood
+#### 3️⃣ CMB Likelihood Library (Optional)
 
-Finally, clone and install the cmb-likelihood library:
+Install the CMB likelihood library:
 
 ```bash
 git clone https://github.com/htjb/cmb-likelihood.git
@@ -66,60 +86,122 @@ cd ..
 rm -r cmb-likelihood
 ```
 
-### 4. Setup WandB
+#### 4️⃣ Weights & Biases Setup
 
-As I use [Weights & Biases (WandB)](https://wandb.ai/) for experiment tracking, you need to set up your WandB account
-and API key.
-It is free to use for academic purposes. Once set up you need to setup the following environment variable in the ``
-.env.example`` file.
+Configure [Weights & Biases](https://wandb.ai/) for experiment tracking (free for academic use):
 
 ```bash
+# Create environment file
 vim .env.example
-### setup WANDB_API_KEY
+# Add your WandB API key
+echo "WANDB_API_KEY=your_api_key_here" >> .env.example
 mv .env.example .env
 ```
 
-## Code Structure
+## 🏗️ Code Architecture
 
-The code is structured as follows:
+The PolySwyft framework is built with a modular architecture consisting of four core components:
 
-#### 1. A swyft-compatible Simulator class e.g. ``PolySwyft_Simulator_MultiGauss.py``.
+### 🔧 Core Components
 
-- This is a standard ``swyft`` simulator class that takes in a set of parameters and returns a set of simulated data.
+#### 1️⃣ **Simulator Class** (`PolySwyft_Simulator_MultiGauss.py`)
 
-#### 2. A PolySwyft-compatible Network class e.g. ``PolySwyft_Network.py``.
+- **Purpose**: Standard `swyft`-compatible simulator
+- **Functionality**: Takes parameter sets and returns simulated data
+- **Usage**: Define your forward model here
 
-- This is a ``Network(swyft.SwyftModule)`` class that extends its usual ``torch.nn.Module`` functionality of a
-  ``forward`` method with ``PolyChord``compatible methods.
-- For this class, one has to implement a ``prior``, ``loglikelihood``and ``dumper`` (optional) function that are methods
-  needed for ``PolyChord``.
-- The ``prior`` function receives a set of hypercube parameters in unit-space and returns a set of prior samples in the
-  physical space.
-- The ``loglikelihood`` function receives a set of physical parameters and returns the log-ratio of the data given the
-  parameters.
-- The ``dumper`` function is optional to monitor runtime progress of ``PolyChord``.
+#### 2️⃣ **Network Class** (`PolySwyft_Network.py`)
 
-#### 3. A ``PolySwyft_Dataloader.py`` file.
+- **Purpose**: Extends `swyft.SwyftModule` with PolyChord compatibility
+- **Key Methods**:
+    - `prior()`: Converts hypercube parameters to physical space
+    - `loglikelihood()`: Computes log-ratio of data given parameters
+    - `dumper()`: Optional runtime monitoring for PolyChord
+- **Integration**: Seamlessly bridges neural networks with nested sampling
 
-Implementing the dataloading accross multiple rounds for retraining the network.
+#### 3️⃣ **Data Loader** (`PolySwyft_Dataloader.py`)
 
-#### 4. A ``utils.py``file to implement the
+- **Purpose**: Multi-round data management
+- **Features**: Handles progressive training across multiple rounds
+- **Optimization**: Efficient batch selection from all previous rounds
 
-``PolySwyft``-specific functions e.g. KL-divergence diagnostics functions and
+#### 4️⃣ **Utilities** (`utils.py`)
 
-conditional sampling using deadpoints.
+- **Purpose**: PolySwyft-specific helper functions
+- **Features**:
+    - KL-divergence diagnostics
+    - Conditional sampling using deadpoints
+    - Convergence monitoring tools
 
-#### 5. When ``PolySwyft`` is run, it will automatically create a root folder in the current working directory.
+### 📁 Output Structure
 
-This folder contains the following structure:
+When PolySwyft runs, it automatically creates a structured output directory:
 
-``round_i``folder containing:
+```
+project_root/
+├── round_0/
+│   ├── neural_network.pt
+│   ├── optimizer_state.pt
+│   ├── deadpoints.npy
+│   └── joint_samples.npy
+├── round_1/
+│   └── ...
+└── settings.pkl
+```
 
-- The neural network at round ``i``.
-- Optimiser state at round ``i``.
-- Deadpoints that were generated using the network at round ``i``.
-- The joint samples ``p(\theta,D)_i`` used to train the network at round ``i`` saved as ``.npy``files. For instance, in
-  round ``i=0``, the folder contains the full prior samples, and in ``i=1``the new joint samples created via the
-  deadpoints at round ``i=0`` are stored. The dataloader randomly selects batches from all rounds until round ``i`` (
-  inclusive)  to train the network at round ``i``.
+**Each `round_i/` folder contains**:
 
+- 🧠 **Neural Network**: Trained model at round `i`
+- ⚙️ **Optimizer State**: Training state for resuming
+- 💀 **Deadpoints**: Samples generated using network at round `i`
+- 📊 **Joint Samples**: `p(θ,D)_i` used for training (saved as `.npy` files)
+
+> **Note**: Round `i=0` contains full prior samples, while subsequent rounds contain samples created via deadpoints from
+> previous rounds. The dataloader randomly selects batches from all rounds up to and including the current round.
+
+## 👥 Contributors
+
+### Main Contributor
+
+- **Kilian Scheutwinkel** - _Lead Developer & Researcher_
+
+### Project Supervisors
+
+- **Will Handley** - _Project Supervisor_
+- **Christoph Weniger** - _Project Supervisor_
+
+## 📄 License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to
+discuss what you would like to change.
+
+## 📚 Citation
+
+If you use PolySwyft in your research, please cite:
+
+```bibtex
+@software{polyswyft2024,
+  title={PolySwyft: Nested Sampling Neural Ratio Estimator},
+  author={Scheutwinkel, Kilian and Handley, Will and Weniger, Christoph},
+  year={2024},
+  url={https://github.com/yourusername/NS_LFI}
+}
+```
+
+## 📞 Support
+
+For questions, issues, or contributions, please:
+
+- Open an issue on GitHub
+- Contact the main contributor: [Kilian Scheutwinkel](mailto:your.email@example.com)
+
+---
+
+<div align="center">
+  <p><strong>Made with ❤️ for the scientific community</strong></p>
+  <p>⭐ Star this repository if you find it useful!</p>
+</div>
