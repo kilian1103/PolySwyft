@@ -1,4 +1,3 @@
-import gc
 import logging
 
 import numpy as np
@@ -11,12 +10,13 @@ from pytorch_lightning import seed_everything
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
+from PolySwyft.PolySwyft import PolySwyft
 from PolySwyft.PolySwyft_Network import Network
 from PolySwyft.PolySwyft_Post_Analysis import plot_analysis_of_NSNRE
 from PolySwyft.PolySwyft_Settings import PolySwyft_Settings
 from PolySwyft.PolySwyft_Simulator_MultiGauss import Simulator
-from PolySwyft.PolySwyft import PolySwyft
 from PolySwyft.utils import reload_data_for_plotting
+
 
 ###requires lsbi==0.9.0 for reproducibility
 def execute():

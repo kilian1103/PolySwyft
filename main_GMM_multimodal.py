@@ -1,24 +1,25 @@
-import gc
 import logging
-from scipy.stats import wishart
+
 import anesthetic
-from lsbi.model import MixtureModel
 import numpy as np
 import pypolychord
 import swyft
 import torch
 from anesthetic import MCMCSamples
+from lsbi.model import MixtureModel
 from mpi4py import MPI
 from pytorch_lightning import seed_everything
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+from scipy.stats import wishart
 
+from PolySwyft.PolySwyft import PolySwyft
 from PolySwyft.PolySwyft_Network import Network
 from PolySwyft.PolySwyft_Post_Analysis import plot_analysis_of_NSNRE
 from PolySwyft.PolySwyft_Settings import PolySwyft_Settings
 from PolySwyft.PolySwyft_Simulator_MixGaussMultiPost import Simulator
-from PolySwyft.PolySwyft import PolySwyft
 from PolySwyft.utils import reload_data_for_plotting
+
 
 ###requires lsbi==0.12.0 for reproducibility
 def execute():
