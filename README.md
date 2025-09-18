@@ -5,7 +5,7 @@
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red.svg)](https://pytorch.org)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
-[![arXiv](https://img.shields.io/badge/arXiv-2024.xxxxx-b31b1b.svg)](https://arxiv.org)
+[![arXiv](https://img.shields.io/badge/arXiv-2025.xxxxx-b31b1b.svg)](https://arxiv.org)
 
 </div>
 
@@ -17,7 +17,7 @@ PyTorch-based framework.
 
 ### ✨ Key Features
 
-- 🔄 **Sequential Neural Ratio Estimation**: Advanced nested sampling with neural networks
+- 🔄 **Sequential Neural Ratio Estimation**: Advanced nested sampling with neural networks, MPI compatibility
 - 🎯 **Multi-round Training**: Progressive improvement through multiple training rounds
 - 📊 **Comprehensive Diagnostics**: Built-in KL-divergence and convergence monitoring
 - 🔧 **Modular Design**: Easy to customize and extend for different problems
@@ -140,13 +140,15 @@ When PolySwyft runs, it automatically creates a structured output directory:
 ```
 project_root/
 ├── round_0/
-│   ├── neural_network.pt
-│   ├── optimizer_state.pt
-│   ├── deadpoints.npy
-│   └── joint_samples.npy
+│   ├── NRE_network.pt    # neural network weights
+│   ├── optimizer_file.pt # optimizer state
+│   ├── x.npy             # data samples
+│   ├── z.npy             # parameter samples  with (z,x) ~ p(θ,D)
+│   ├── samples.*         # output from nested sampling, anesthetic compatible
+│   └── wandb             # Weights & Biases logs
 ├── round_1/
 │   └── ...
-└── settings.pkl
+└── settings.pkl          # polyswyft settings pickle file
 ```
 
 **Each `round_i/` folder contains**:
@@ -154,7 +156,7 @@ project_root/
 - 🧠 **Neural Network**: Trained model at round `i`
 - ⚙️ **Optimizer State**: Training state for resuming
 - 💀 **Deadpoints**: Samples generated using network at round `i`
-- 📊 **Joint Samples**: `p(θ,D)_i` used for training (saved as `.npy` files)
+- 📊 **Joint Samples**: `p(θ,D)_i` used for training network at round `i` (saved as `.npy` files)
 
 > **Note**: Round `i=0` contains full prior samples, while subsequent rounds contain samples created via deadpoints from
 > previous rounds. The dataloader randomly selects batches from all rounds up to and including the current round.
@@ -184,11 +186,11 @@ discuss what you would like to change.
 If you use PolySwyft in your research, please cite:
 
 ```bibtex
-@software{polyswyft2024,
-  title={PolySwyft: Nested Sampling Neural Ratio Estimator},
+@software{polyswyft2025,
+  title={PolySwyft: sequential simulation-based nested sampling},
   author={Scheutwinkel, Kilian and Handley, Will and Weniger, Christoph},
-  year={2024},
-  url={https://github.com/yourusername/NS_LFI}
+  year={2025},
+  url={https://github.com/kilian1103/PolySwyft}
 }
 ```
 
@@ -197,7 +199,7 @@ If you use PolySwyft in your research, please cite:
 For questions, issues, or contributions, please:
 
 - Open an issue on GitHub
-- Contact the main contributor: [Kilian Scheutwinkel](mailto:your.email@example.com)
+- Contact the main contributor: [Kilian Scheutwinkel](mailto:hikarukilian@gmail.com)
 
 ---
 
