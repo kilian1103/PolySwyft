@@ -186,12 +186,20 @@ discuss what you would like to change.
 If you use PolySwyft in your research, please cite:
 
 ```bibtex
-@software{polyswyft2025,
-  title={PolySwyft: sequential simulation-based nested sampling},
-  author={Scheutwinkel, Kilian and Handley, Will and Weniger, Christoph},
-  year={2025},
-  url={https://github.com/kilian1103/PolySwyft}
-}
+
+@article{scheutwinkel_polyswyft_2025,
+	title = {{PolySwyft}: sequential simulation-based nested sampling},
+	shorttitle = {{PolySwyft}},
+	url = {http://arxiv.org/abs/2512.08316},
+	doi = {10.48550/arXiv.2512.08316},
+	abstract = {We present PolySwyft, a novel, non-amortised simulation-based inference framework that unites the strengths of nested sampling (NS) and neural ratio estimation (NRE) to tackle challenging posterior distributions when the likelihood is intractable but a forward simulator is available. By nesting rounds of NRE within the exploration of NS, and employing a principled KL-divergence criterion to adaptively terminate sampling, PolySwyft achieves faster convergence on complex, multimodal targets while rigorously preserving Bayesian validity. On a suite of toy problems with analytically known posteriors of a dim(theta,D)=(5,100) multivariate Gaussian and multivariate correlated Gaussian mixture model, we demonstrate that PolySwyft recovers all modes and credible regions with fewer simulator calls than swyft's TNRE. As a real-world application, we infer cosmological parameters dim(theta,D)=(6,111) from CMB power spectra using CosmoPower. PolySwyft is released as open-source software, offering a flexible toolkit for efficient, accurate inference across the astrophysical sciences and beyond.},
+	urldate = {2025-12-10},
+	publisher = {arXiv},
+	author = {Scheutwinkel, Kilian H. and Handley, Will and Weniger, Christoph and Acedo, Eloy de Lera},
+	month = dec,
+	year = {2025},
+	note = {arXiv:2512.08316 [astro-ph]},
+	keywords = {Astrophysics - Cosmology and Nongalactic Astrophysics, Astrophysics - Instrumentation and Methods for Astrophysics},
 ```
 
 ## 📞 Support
