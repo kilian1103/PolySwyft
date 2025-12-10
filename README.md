@@ -5,7 +5,7 @@
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red.svg)](https://pytorch.org)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
-[![arXiv](https://img.shields.io/badge/arXiv-2025.xxxxx-b31b1b.svg)](https://arxiv.org)
+[![arXiv](https://img.shields.io/badge/arXiv-2512.08316-b31b1b.svg)](https://arxiv.org/abs/2512.08316)
 
 </div>
 
@@ -171,6 +171,7 @@ project_root/
 
 - **Will Handley** - _Project Supervisor_
 - **Christoph Weniger** - _Project Supervisor_
+- **Eloy de Lera Acedo** - _Project Supervisor_
 
 ## 📄 License
 
@@ -207,7 +208,7 @@ If you use PolySwyft in your research, please cite:
 For questions, issues, or contributions, please:
 
 - Open an issue on GitHub
-- Contact the main contributor: [Kilian Scheutwinkel](mailto:hikarukilian@gmail.com)
+- Contact the main contributor: [Kilian Scheutwinkel](mailto:khs40@cantab.ac.uk)
 
 ---
 
