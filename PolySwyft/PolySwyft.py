@@ -141,7 +141,7 @@ class PolySwyft:
             network.load_state_dict(torch.load(f"{prev_root}/{self.polyswyftSettings.neural_network_file}"))
 
         ### continue lr rate at last point
-        if self.lr_round_scheduler is not None:
+        if callable(self.lr_round_scheduler):
             learning_rate = self.lr_round_scheduler(rd)  # between rounds
             network.optimizer_init.optim_args = dict(lr=learning_rate)
 
@@ -233,7 +233,7 @@ class PolySwyft:
         self.network_storage[self.previous_key] = network
 
         #### optional deadpoints post processing
-        if self.deadpoints_processing is not None:
+        if callable(self.deadpoints_processing):
             deadpoints = self.deadpoints_processing(deadpoints, rd)
 
         # prepare data for next round
