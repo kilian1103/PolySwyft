@@ -130,8 +130,8 @@ class TestResimulateDeadpointsSingleRank:
 
     def test_barrier_call_count(self):
         self._call()
-        total = self.comm.Barrier.call_count + self.comm.barrier.call_count
-        assert total == 4
+        assert self.comm.Barrier.call_count == 4
+        self.comm.barrier.assert_not_called()
 
     def test_bcast_called(self):
         self._call()
@@ -232,7 +232,6 @@ class TestResimulateDeadpointsMultiRank:
 class TestPolySwyftInitMPI:
     def test_raises_import_error_when_mpi4py_missing(self):
         with patch.dict(sys.modules, {"mpi4py": None, "mpi4py.MPI": None}):
-            # Need to reload core module so it picks up the patched sys.modules
             from polyswyft.core import PolySwyft
 
             with pytest.raises(ImportError, match="mpi4py"):

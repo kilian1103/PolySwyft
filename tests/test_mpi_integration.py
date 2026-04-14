@@ -1,8 +1,8 @@
 """Integration tests for MPI code paths — require mpi4py and mpirun.
 
 Run with:
-    mpirun -n 1 pytest tests/test_mpi_integration.py -v
-    mpirun -n 2 pytest tests/test_mpi_integration.py -v
+    mpirun -n 1 pytest -m integration tests/test_mpi_integration.py -v
+    mpirun -n 2 pytest -m integration tests/test_mpi_integration.py -v
 """
 
 import logging
