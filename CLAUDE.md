@@ -35,5 +35,10 @@ ruff check . && ruff format --check .    # lint
 
 - PolyChord must be installed separately (build from source)
 - MPI (`mpi4py`) required for full PolySwyft runs; unit tests do not require MPI
+- MPI integration tests (require `mpi4py` + `mpirun`):
+  ```bash
+  mpirun -n 1 pytest tests/test_mpi_integration.py -m integration -v
+  mpirun -n 2 pytest tests/test_mpi_integration.py -m integration -v
+  ```
 - Version is auto-bumped on merge to master via `.github/workflows/version-bump.yml` (conventional commits: `feat:` -> minor, `fix:` -> patch, `BREAKING CHANGE`/`feat!:` -> major)
 - Version lives in both `pyproject.toml` and `polyswyft/__init__.py`
