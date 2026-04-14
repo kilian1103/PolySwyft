@@ -14,10 +14,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Check for POLYSWYFT_REPOSITORY_VERSION_BUMPER
+        if: ${{ !secrets.POLYSWYFT_REPOSITORY_VERSION_BUMPER }}
+        run: |
+          echo "::error::POLYSWYFT_REPOSITORY_VERSION_BUMPER secret is not set. A Personal Access Token is required to push to the protected master branch."
+          echo "Create a fine-grained PAT with 'Contents: Read and write' permission, add it as a repository secret named POLYSWYFT_REPOSITORY_VERSION_BUMPER."
+          exit 1
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.RELEASE_PAT || github.token }}
+          token: ${{ secrets.POLYSWYFT_REPOSITORY_VERSION_BUMPER }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
