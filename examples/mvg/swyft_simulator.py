@@ -2,11 +2,11 @@ import scipy.stats
 import swyft
 from lsbi.model import LinearModel
 
-from PolySwyft.PolySwyft_Settings import PolySwyft_Settings
+from polyswyft.settings import PolySwyftSettings
 
 
 class Simulator(swyft.Simulator):
-    def __init__(self, polyswyftSettings: PolySwyft_Settings, bounds=None, model: LinearModel = None):
+    def __init__(self, polyswyftSettings: PolySwyftSettings, bounds=None, model: LinearModel = None):
         super().__init__()
         self.polyswyftSettings = polyswyftSettings
         #self.C_inv = torch.inverse(C)

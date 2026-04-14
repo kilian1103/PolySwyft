@@ -1,39 +1,45 @@
+from __future__ import annotations
+
 import logging
 import os
 import pickle
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
 
 import anesthetic
 import numpy as np
-import pypolychord
 import swyft
 import torch
-import wandb
-from pypolychord import PolyChordSettings
-from pytorch_lightning.loggers import WandbLogger
 
-from PolySwyft.PolySwyft_Dataloader import PolySwyftDataModule
-from PolySwyft.PolySwyft_Settings import PolySwyft_Settings
-from PolySwyft.utils import compute_KL_divergence, resimulate_deadpoints, select_weighted_contour, \
-    compute_KL_compression
+from polyswyft.dataloader import PolySwyftDataModule
+from polyswyft.network import PolySwyftNetwork
+from polyswyft.settings import PolySwyftSettings
+from polyswyft.utils import (
+    compute_KL_compression,
+    compute_KL_divergence,
+    resimulate_deadpoints,
+    select_weighted_contour,
+)
 
-try:
-    from mpi4py import MPI
-except ImportError:
-    raise ImportError("mpi4py is required for PolySwyft!")
-comm_gen = MPI.COMM_WORLD
-rank_gen = comm_gen.Get_rank()
-size_gen = comm_gen.Get_size()
+if TYPE_CHECKING:
+    from pypolychord import PolyChordSettings
 
 
 class PolySwyft:
-    def __init__(self, polyswyftSettings: PolySwyft_Settings, sim: swyft.Simulator,
-                 obs: swyft.Sample, deadpoints: np.ndarray,
-                 network: swyft.SwyftModule, polyset: PolyChordSettings,
-                 callbacks: Callable, lr_round_scheduler: Callable = None, deadpoints_processing: Callable = None):
+    def __init__(
+        self,
+        polyswyftSettings: PolySwyftSettings,
+        sim: swyft.Simulator,
+        obs: swyft.Sample,
+        deadpoints: np.ndarray,
+        network: PolySwyftNetwork,
+        polyset: PolyChordSettings,
+        callbacks: Callable,
+        lr_round_scheduler: Callable = None,
+        deadpoints_processing: Callable = None,
+    ):
         """
         Initialize the PolySwyft object.
-        :param polyswyftSettings: A PolySwyft_Settings object
+        :param polyswyftSettings: A PolySwyftSettings object
         :param sim: A swyft simulator object
         :param obs: A swyft sample of the observed data
         :param deadpoints_samplse: An array of the deadpoints samplses
@@ -41,6 +47,13 @@ class PolySwyft:
         :param polyset: A PolyChordSettings object
         :param callbacks: A callable object for instantiating the new callbacks of the pl.trainer
         """
+        try:
+            from mpi4py import MPI
+        except ImportError as err:
+            raise ImportError("mpi4py is required for PolySwyft. Install it with: pip install mpi4py") from err
+        self._comm = MPI.COMM_WORLD
+        self._rank = self._comm.Get_rank()
+
         self.polyswyftSettings = polyswyftSettings
         self.polyset = polyset
         self.sim = sim
@@ -69,19 +82,23 @@ class PolySwyft:
         os.makedirs(self.polyswyftSettings.root, exist_ok=True)
 
         ### save settings
-        with open(f'{self.polyswyftSettings.root}/settings.pkl', 'wb') as file:
+        with open(f"{self.polyswyftSettings.root}/settings.pkl", "wb") as file:
             pickle.dump(self.polyswyftSettings, file)
 
         ### reload data if necessary to resume run ###
         if self.polyswyftSettings.NRE_start_from_round > 0:
-            if (self.polyswyftSettings.NRE_start_from_round > self.polyswyftSettings.NRE_num_retrain_rounds and
-                    self.polyswyftSettings.cyclic_rounds):
+            if (
+                self.polyswyftSettings.NRE_start_from_round > self.polyswyftSettings.NRE_num_retrain_rounds
+                and self.polyswyftSettings.cyclic_rounds
+            ):
                 raise ValueError("NRE_start_from_round must be smaller than NRE_num_retrain_rounds")
 
-            root = (f"{self.polyswyftSettings.root}/{self.polyswyftSettings.child_root}_"
-                    f"{self.polyswyftSettings.NRE_start_from_round - 1}")
+            root = (
+                f"{self.polyswyftSettings.root}/{self.polyswyftSettings.child_root}_"
+                f"{self.polyswyftSettings.NRE_start_from_round - 1}"
+            )
             deadpoints = anesthetic.read_chains(root=f"{root}/{self.polyset.file_root}")
-            self.deadpoints_samples = deadpoints.iloc[:, :self.polyswyftSettings.num_features].to_numpy()
+            self.deadpoints_samples = deadpoints.iloc[:, : self.polyswyftSettings.num_features].to_numpy()
             network = self.network_model.get_new_network()
             network.load_state_dict(torch.load(f"{root}/{self.polyswyftSettings.neural_network_file}"))
             network.double()
@@ -118,14 +135,18 @@ class PolySwyft:
         os.makedirs(root, exist_ok=True)
 
         ### generate training data using deadpoints
-        resimulate_deadpoints(deadpoints=self.deadpoints_samples, polyswyftSettings=self.polyswyftSettings,
-                              sim=self.sim, rd=rd)
+        resimulate_deadpoints(
+            deadpoints=self.deadpoints_samples, polyswyftSettings=self.polyswyftSettings, sim=self.sim, rd=rd
+        )
 
         ### setup wandb ###
         if self.polyswyftSettings.activate_wandb:
+            from pytorch_lightning.loggers import WandbLogger
+
             self.polyswyftSettings.wandb_kwargs["name"] = f"{self.polyswyftSettings.child_root}_{rd}"
-            self.polyswyftSettings.wandb_kwargs[
-                "save_dir"] = f"{self.polyswyftSettings.root}/{self.polyswyftSettings.child_root}_{rd}"
+            self.polyswyftSettings.wandb_kwargs["save_dir"] = (
+                f"{self.polyswyftSettings.root}/{self.polyswyftSettings.child_root}_{rd}"
+            )
             wandb_logger = WandbLogger(**self.polyswyftSettings.wandb_kwargs)
             self.polyswyftSettings.trainer_kwargs["logger"] = wandb_logger
 
@@ -146,49 +167,57 @@ class PolySwyft:
             network.optimizer_init.optim_args = dict(lr=learning_rate)
 
         ### train network
-        dm = PolySwyftDataModule(polyswyftSettings=self.polyswyftSettings, rd=rd,
-                                 **self.polyswyftSettings.dm_kwargs)
+        dm = PolySwyftDataModule(polyswyftSettings=self.polyswyftSettings, rd=rd, **self.polyswyftSettings.dm_kwargs)
         network.train()
         trainer.fit(network, dm)
-        comm_gen.Barrier()
-        if self.polyswyftSettings.activate_wandb and rank_gen == 0:
+        self._comm.Barrier()
+        if self.polyswyftSettings.activate_wandb and self._rank == 0:
+            import wandb
+
             wandb.finish()
 
         ### save network on disk ###
-        if rank_gen == 0:
+        if self._rank == 0:
             torch.save(network.state_dict(), f"{root}/{self.polyswyftSettings.neural_network_file}")
             torch.save(network.optimizers().state_dict(), f"{root}/{self.polyswyftSettings.optimizer_file}")
 
-        comm_gen.Barrier()
+        self._comm.Barrier()
 
         ### load network on disk (to sync across nodes) ###
         if self.polyswyftSettings.continual_learning_mode:
             network.load_state_dict(torch.load(f"{root}/{self.polyswyftSettings.neural_network_file}"))
-        comm_gen.Barrier()
+        self._comm.Barrier()
 
         ### prepare network for inference ###
         network.eval()
 
         ### start polychord section ###
         ### run PolyChord ###
+        import pypolychord
+
         self.logger.info("Using PolyChord with trained NRE to generate deadpoints for the next round!")
         self.polyset.base_dir = root
-        comm_gen.barrier()
+        self._comm.barrier()
 
-        pypolychord.run_polychord(loglikelihood=network.logLikelihood,
-                                  nDims=self.polyswyftSettings.num_features,
-                                  nDerived=self.polyswyftSettings.nderived, settings=self.polyset,
-                                  prior=network.prior, dumper=network.dumper)
-        comm_gen.Barrier()
+        pypolychord.run_polychord(
+            loglikelihood=network.logRatio,
+            nDims=self.polyswyftSettings.num_features,
+            nDerived=self.polyswyftSettings.nderived,
+            settings=self.polyset,
+            prior=network.prior,
+            dumper=network.dumper,
+        )
+        self._comm.Barrier()
 
         deadpoints = anesthetic.read_chains(root=f"{root}/{self.polyset.file_root}")
-        comm_gen.Barrier()
+        self._comm.Barrier()
 
         ### polychord round 2 section (optional for dynamic nested sampling)###
         if self.polyswyftSettings.use_livepoint_increasing:
             ### choose contour to increase livepoints ###
-            index = select_weighted_contour(deadpoints,
-                                            threshold=1 - self.polyswyftSettings.livepoint_increase_posterior_contour)
+            index = select_weighted_contour(
+                deadpoints, threshold=1 - self.polyswyftSettings.livepoint_increase_posterior_contour
+            )
             logL = deadpoints.iloc[index, :].logL
 
             os.makedirs(f"{root}/{self.polyswyftSettings.increased_livepoints_fileroot}", exist_ok=True)
@@ -196,16 +225,21 @@ class PolySwyft:
             ### run polychord round 2 ###
             self.polyset.base_dir = f"{root}/{self.polyswyftSettings.increased_livepoints_fileroot}"
             self.polyset.nlives = {logL: self.polyswyftSettings.n_increased_livepoints}
-            comm_gen.Barrier()
-            pypolychord.run_polychord(loglikelihood=network.logLikelihood,
-                                      nDims=self.polyswyftSettings.num_features,
-                                      nDerived=self.polyswyftSettings.nderived, settings=self.polyset,
-                                      prior=network.prior, dumper=network.dumper)
-            comm_gen.Barrier()
+            self._comm.Barrier()
+            pypolychord.run_polychord(
+                loglikelihood=network.logRatio,
+                nDims=self.polyswyftSettings.num_features,
+                nDerived=self.polyswyftSettings.nderived,
+                settings=self.polyset,
+                prior=network.prior,
+                dumper=network.dumper,
+            )
+            self._comm.Barrier()
             self.polyset.nlives = {}
             deadpoints = anesthetic.read_chains(
-                root=f"{root}/{self.polyswyftSettings.increased_livepoints_fileroot}/{self.polyset.file_root}")
-            comm_gen.Barrier()
+                root=f"{root}/{self.polyswyftSettings.increased_livepoints_fileroot}/{self.polyset.file_root}"
+            )
+            self._comm.Barrier()
 
         #### compute KL divergences
         self.root_storage[rd] = root
@@ -215,10 +249,13 @@ class PolySwyft:
         #### compute KL(P_i||P_(i-1))
         if rd > 0:
             previous_network = self.network_storage[self.previous_key]
-            KDL = compute_KL_divergence(polyswyftSettings=self.polyswyftSettings,
-                                        previous_network=previous_network.eval(),
-                                        current_samples=self.samples_storage[self.current_key], obs=self.obs,
-                                        previous_samples=self.samples_storage[self.previous_key])
+            KDL = compute_KL_divergence(
+                polyswyftSettings=self.polyswyftSettings,
+                previous_network=previous_network.eval(),
+                current_samples=self.samples_storage[self.current_key],
+                obs=self.obs,
+                previous_samples=self.samples_storage[self.previous_key],
+            )
             self.dkl_storage[rd] = KDL
             self.logger.info(f"Round {rd}: KL(P_i||P_(i-1)) = {KDL[0]} +/- {KDL[1]}")
             print(f"Round {rd}: KL(P_i||P_(i-1)) = {KDL[0]} +/- {KDL[1]}")
@@ -237,8 +274,8 @@ class PolySwyft:
             deadpoints = self.deadpoints_processing(deadpoints, rd)
 
         # prepare data for next round
-        deadpoints_samples = deadpoints.iloc[:, :self.polyswyftSettings.num_features].to_numpy()
-        comm_gen.Barrier()
+        deadpoints_samples = deadpoints.iloc[:, : self.polyswyftSettings.num_features].to_numpy()
+        self._comm.Barrier()
         self.logger.info(f"Number of deadpoints for next rd {rd + 1}: {deadpoints_samples.shape[0]}")
         self.deadpoints_samples = deadpoints_samples
         return

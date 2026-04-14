@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "PolySwyft: sequential simulation-based nested sampling"
+type: software
+license: Apache-2.0
+url: "https://github.com/kilian1103/PolySwyft"
+repository-code: "https://github.com/kilian1103/PolySwyft"
+doi: "10.48550/arXiv.2512.08316"
+authors:
+  - family-names: Scheutwinkel
+    given-names: Kilian H.
+    email: khs40@cantab.ac.uk
+  - family-names: Handley
+    given-names: Will
+  - family-names: Weniger
+    given-names: Christoph
+  - family-names: de Lera Acedo
+    given-names: Eloy
+preferred-citation:
+  type: article
+  title: "PolySwyft: sequential simulation-based nested sampling"
+  doi: "10.48550/arXiv.2512.08316"
+  url: "https://arxiv.org/abs/2512.08316"
+  year: 2025
+  month: 12
+  authors:
+    - family-names: Scheutwinkel
+      given-names: Kilian H.
+    - family-names: Handley
+      given-names: Will
+    - family-names: Weniger
+      given-names: Christoph
+    - family-names: de Lera Acedo
+      given-names: Eloy

@@ -7,8 +7,8 @@ from mpi4py import MPI
 from pypolychord import PolyChordSettings, run_polychord
 from pytorch_lightning import seed_everything
 
-from PolySwyft.PolySwyft_Settings import PolySwyft_Settings
-from PolySwyft.PolySwyft_Simulator_MultiGauss import Simulator
+from examples.mvg.simulator import Simulator
+from polyswyft.settings import PolySwyftSettings
 
 
 ###requires lsbi==0.9.0 for reproducibility
@@ -18,7 +18,7 @@ def execute():
     rank_gen = comm_gen.Get_rank()
     size_gen = comm_gen.Get_size()
     root = "MVG_PolyChord"
-    polyswyftSettings = PolySwyft_Settings(root)
+    polyswyftSettings = PolySwyftSettings(root)
     seed_everything(polyswyftSettings.seed, workers=True)
     logging.basicConfig(filename=polyswyftSettings.logger_name, level=logging.INFO,
                         filemode="a")
@@ -55,7 +55,7 @@ def execute():
 
     def dumper(live, dead, logweights, logZ, logZerr):
         """Dumper Function for PolyChord for runtime progress access."""
-        print("Last dead point: {}".format(dead[-1]))
+        print(f"Last dead point: {dead[-1]}")
 
     run_polychord(loglikelihood=loglikelihood,
                   nDims=n,

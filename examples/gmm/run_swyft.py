@@ -1,20 +1,22 @@
 import logging
-from scipy.stats import multivariate_normal
+
 import numpy as np
 import swyft
 import torch
-from anesthetic import MCMCSamples
-from mpi4py import MPI
 import wandb
-from pytorch_lightning.loggers import WandbLogger
+from anesthetic import MCMCSamples
 from lsbi.model import MixtureModel
+from mpi4py import MPI
 from pytorch_lightning import seed_everything
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+from pytorch_lightning.loggers import WandbLogger
 from scipy.stats import wishart
-from PolySwyft.PolySwyft_Network import Network
-from PolySwyft.PolySwyft_Settings import PolySwyft_Settings
-from PolySwyft.PolySwyft_Simulator_MixGaussMultiPost import Simulator
+
+from examples.gmm.network import Network
+from examples.gmm.simulator import Simulator
+from polyswyft.settings import PolySwyftSettings
+
 
 ###requires lsbi==0.12.0 for reproducibility
 def execute():
@@ -24,7 +26,7 @@ def execute():
     size_gen = comm_gen.Get_size()
 
     root = "GMM_Swyft"
-    polyswyftSettings = PolySwyft_Settings(root=root)
+    polyswyftSettings = PolySwyftSettings(root=root)
     polyswyftSettings.seed = 250
     seed_everything(polyswyftSettings.seed, workers=True)
     logging.basicConfig(filename=polyswyftSettings.logger_name, level=logging.INFO,

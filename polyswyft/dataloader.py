@@ -1,13 +1,22 @@
-from torch.utils.data import Dataset
-import torch
 import os
-from PolySwyft.PolySwyft_Settings import PolySwyft_Settings
-import pytorch_lightning as pl
-from torch.utils.data import DataLoader, random_split
-import numpy as np
 from typing import Callable, Optional
+
+import numpy as np
+import pytorch_lightning as pl
+import torch
+from torch.utils.data import DataLoader, Dataset, random_split
+
+from polyswyft.settings import PolySwyftSettings
+
+
 class PolySwyftSequential(Dataset):
-    def __init__(self, polyswyftSettings: PolySwyft_Settings, rd, index_subset=None, on_after_load_sample: Optional[Callable] =None):
+    def __init__(
+        self,
+        polyswyftSettings: PolySwyftSettings,
+        rd,
+        index_subset=None,
+        on_after_load_sample: Optional[Callable] = None,
+    ):
         self.polyswyftSettings = polyswyftSettings
         self.rd = rd
         self.on_after_load_sample = on_after_load_sample
@@ -19,15 +28,12 @@ class PolySwyftSequential(Dataset):
             theta_path = os.path.join(round_dir, f"{self.polyswyftSettings.targetKey}.npy")
             obs_path = os.path.join(round_dir, f"{self.polyswyftSettings.obsKey}.npy")
 
-            thetas = np.load(theta_path, mmap_mode='r')  # memory-efficient numpy mmap
-            obs = np.load(obs_path, mmap_mode='r')
+            thetas = np.load(theta_path, mmap_mode="r")  # memory-efficient numpy mmap
+            obs = np.load(obs_path, mmap_mode="r")
 
             assert thetas.shape[0] == obs.shape[0], f"Mismatch in round {round_id}"
 
-            self.round_data[round_id] = {
-                self.polyswyftSettings.targetKey: thetas,
-                self.polyswyftSettings.obsKey: obs
-            }
+            self.round_data[round_id] = {self.polyswyftSettings.targetKey: thetas, self.polyswyftSettings.obsKey: obs}
 
             self.index_map.extend([(round_id, i) for i in range(thetas.shape[0])])
 
@@ -52,18 +58,17 @@ class PolySwyftSequential(Dataset):
         return sample
 
 
-
 class PolySwyftDataModule(pl.LightningDataModule):
     def __init__(
-            self,
-            polyswyftSettings: PolySwyft_Settings,
-            rd: int,
-            lengths=None,
-            fractions=None,
-            batch_size=64,
-            num_workers=0,
-            shuffle=True,
-            on_after_load_sample=None,
+        self,
+        polyswyftSettings: PolySwyftSettings,
+        rd: int,
+        lengths=None,
+        fractions=None,
+        batch_size=64,
+        num_workers=0,
+        shuffle=True,
+        on_after_load_sample=None,
     ):
         super().__init__()
         self.polyswyftSettings = polyswyftSettings
@@ -85,7 +90,7 @@ class PolySwyftDataModule(pl.LightningDataModule):
         total_len = len(full_dataset)
 
         if self.lengths is None and self.fractions is not None:
-            fractions = np.array(self.fractions)
+            fractions = np.array(self.fractions, dtype=float)
             fractions /= fractions.sum()
             counts = np.floor(total_len * fractions).astype(int)
             counts[0] += total_len - np.sum(counts)  # ensure sum == total_len

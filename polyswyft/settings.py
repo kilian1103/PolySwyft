@@ -1,7 +1,6 @@
-class PolySwyft_Settings:
+class PolySwyftSettings:
     def __init__(self, root):
-        """NRE initialisation.
-        """
+        """NRE initialisation."""
         self.root = root
         # root directory
         self.child_root = "round"  # root for each round: {root}/{child_root}
@@ -10,8 +9,7 @@ class PolySwyft_Settings:
         self.logger_name = f"{self.root}.log"
         self.seed = 234
         self.activate_wandb = True
-        self.wandb_kwargs = {
-            'project': self.wandb_project_name}
+        self.wandb_kwargs = {"project": self.wandb_project_name}
         # simulator settings
         self.n_training_samples = 10_000  # nsamples for initial training using simulator
         self.n_weighted_samples = 1_000  # nsamples for evaluating NREs
@@ -29,33 +27,29 @@ class PolySwyft_Settings:
         self.learning_rate_init = 0.001
         self.learning_rate_decay = 0.99
         self.optimizer_file = "optimizer_file.pt"
-        self.dm_kwargs = {
-            'fractions': [0.8, 0.1, 0.1],
-            'batch_size': 64,
-            'shuffle': False,
-            'num_workers': 0
+        self.dm_kwargs = {"fractions": [0.8, 0.1, 0.1], "batch_size": 64, "shuffle": False, "num_workers": 0}
+        self.trainer_kwargs = {
+            "accelerator": "cpu",
+            "devices": 60,
+            "num_nodes": 1,
+            "strategy": "ddp",
+            "max_epochs": 1000,
+            "log_every_n_steps": 1,
+            "precision": 64,
+            "enable_progress_bar": True,
+            "default_root_dir": self.root,
+            "callbacks": [],
+            "deterministic": True,
         }
-        self.trainer_kwargs = {"accelerator": 'cpu',
-                               "devices": 60,
-                               "num_nodes": 1,
-                               "strategy": "ddp",
-                               "max_epochs": 1000,
-                               "log_every_n_steps": 1,
-                               "precision": 64,
-                               "enable_progress_bar": True,
-                               "default_root_dir": self.root,
-                               "callbacks": [],
-                               "deterministic": True,
-                               }
         # polychord settings
         self.nderived = 0
         self.model = None
         # NSNRE settings
         self.continual_learning_mode = True
-        self.cyclic_rounds = True # experimental, KL mode not working yet
+        self.cyclic_rounds = True  # experimental, KL mode not working yet
         self.NRE_num_retrain_rounds = 20
         self.NRE_start_from_round = 0
-        self.termination_abs_dkl = 0.2 #experimental, does not work properly yet
+        self.termination_abs_dkl = 0.2  # experimental, does not work properly yet
         self.n_DKL_estimates = 100
         self.use_noise_resampling = False
         self.n_noise_resampling_samples = 2

@@ -1,31 +1,34 @@
 import logging
 
+import anesthetic
 import numpy as np
 import pypolychord
 import swyft
 import torch
 from anesthetic import MCMCSamples
+from lsbi.model import MixtureModel
 from mpi4py import MPI
 from pytorch_lightning import seed_everything
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+from scipy.stats import wishart
 
-from PolySwyft.PolySwyft import PolySwyft
-from PolySwyft.PolySwyft_Network import Network
-from PolySwyft.PolySwyft_Post_Analysis import plot_analysis_of_NSNRE
-from PolySwyft.PolySwyft_Settings import PolySwyft_Settings
-from PolySwyft.PolySwyft_Simulator_MultiGauss import Simulator
-from PolySwyft.utils import reload_data_for_plotting
+from examples.gmm.network import Network
+from examples.gmm.simulator import Simulator
+from examples.plotting import plot_analysis_of_NSNRE
+from polyswyft import PolySwyft, PolySwyftSettings
+from polyswyft.utils import reload_data_for_plotting
 
 
-###requires lsbi==0.9.0 for reproducibility
+###requires lsbi==0.12.0 for reproducibility
 def execute():
     # add different seed for each rank
     comm_gen = MPI.COMM_WORLD
     rank_gen = comm_gen.Get_rank()
     size_gen = comm_gen.Get_size()
-    root = "MVG_PolySwyft"
-    polyswyftSettings = PolySwyft_Settings(root)
+
+    root = "GMM_PolySwyft"
+    polyswyftSettings = PolySwyftSettings(root)
     seed_everything(polyswyftSettings.seed, workers=True)
     logging.basicConfig(filename=polyswyftSettings.logger_name, level=logging.INFO,
                         filemode="a")
@@ -34,24 +37,35 @@ def execute():
     logger.info('Started')
 
     #### instantiate swyft simulator
-    d = polyswyftSettings.num_features_dataset
     n = polyswyftSettings.num_features
+    d = polyswyftSettings.num_features_dataset
+    a = polyswyftSettings.num_mixture_components
 
-    m = torch.randn(d) * 3  # mean vec of dataset
-    M = torch.randn(size=(d, n))  # transform matrix of dataset to parameter vee
-    C = torch.eye(d)  # cov matrix of dataset
-    # C very small, or Sigma very big
-    mu = torch.zeros(n)  # mean vec of parameter prior
-    Sigma = 100 * torch.eye(n)  # cov matrix of parameter prior
-    sim = Simulator(polyswyftSettings=polyswyftSettings, m=m, M=M, C=C, mu=mu, Sigma=Sigma)
+    #prior
+    mu_theta = 5*np.random.randn(a,n)
+    Sigma = 0.1*np.eye(n)
+    Sigma = wishart.rvs(df=n+1, scale=Sigma, size=a)
+    #component weights
+    logA = np.random.uniform(size=a)
+    logA = np.log(logA / np.sum(logA))
+    #likelihood
+    mu_data = np.zeros(shape=(a, d))
+    M = 0.04*np.random.randn(a, d, n)
+    C = 4*np.eye(d)
+
+    model = MixtureModel(M=M, C=C, Sigma=Sigma, mu=mu_theta,
+                         m=mu_data, logw=logA, n=n, d=d)
+    sim = Simulator(polyswyftSettings=polyswyftSettings, model=model)
     polyswyftSettings.model = sim.model  # lsbi model
 
     # generate training dat and obs
-    obs = swyft.Sample(x=torch.tensor(sim.model.evidence().rvs()[None, :]))
+    theta = sim.model.prior().rvs()
+    obs = swyft.Sample(x=torch.tensor(sim.model.likelihood(theta).rvs()[None, :]))
+    #obs = swyft.Sample(x=torch.tensor(sim.model.evidence().rvs()[None, :]))
     n_per_core = polyswyftSettings.n_training_samples // size_gen
+    seed_everything(polyswyftSettings.seed + rank_gen, workers=True)
     if rank_gen == 0:
         n_per_core += polyswyftSettings.n_training_samples % size_gen
-    seed_everything(polyswyftSettings.seed + rank_gen, workers=True)
     deadpoints = sim.sample(n_per_core, targets=[polyswyftSettings.targetKey])[
         polyswyftSettings.targetKey]
     comm_gen.Barrier()
@@ -67,12 +81,14 @@ def execute():
     posterior = full_joint[polyswyftSettings.posteriorsKey]
     weights = np.ones(shape=len(posterior))  # direct samples from posterior have weights 1
     params_labels = {i: rf"${polyswyftSettings.targetKey}_{i}$" for i in range(polyswyftSettings.num_features)}
-    mcmc_true = MCMCSamples(
-        data=posterior, weights=weights.squeeze(),
+    mcmc_true = MCMCSamples(data=posterior, weights=weights.squeeze(),
         logL=true_logratios, labels=params_labels)
 
-    #### instantiate swyft networ
+    #### instantiate swyft network
     network = Network(polyswyftSettings=polyswyftSettings, obs=obs)
+
+    def deadpoints_compress(deadpoints: anesthetic.NestedSamples, rd:int):
+        return deadpoints.compress()
 
     #### create callbacks function for pytorch lightning trainer
     def create_callbacks() -> list:
@@ -83,8 +99,9 @@ def execute():
                                               filename='NRE_{epoch}_{val_loss:.2f}_{train_loss:.2f}', mode='min')
         return [early_stopping_callback, lr_monitor, checkpoint_callback]
 
+
     def lr_round_scheduler(rd: int)-> float:
-        lr = polyswyftSettings.learning_rate_init * (polyswyftSettings.learning_rate_decay ** (polyswyftSettings.early_stopping_patience*rd))
+        lr = polyswyftSettings.learning_rate_init * (polyswyftSettings.learning_rate_decay ** (polyswyftSettings.early_stopping_patience *rd))
         return lr
 
     #### set up polychord settings
@@ -93,7 +110,7 @@ def execute():
     polyset.base_dir = polyswyftSettings.root
     polyset.seed = polyswyftSettings.seed
     polyset.nfail = polyswyftSettings.n_training_samples
-    polyset.nlive = 100*polyswyftSettings.num_features
+    polyset.nlive = polyswyftSettings.num_features * 500
     polySwyft = PolySwyft(polyswyftSettings=polyswyftSettings, sim=sim, obs=obs, deadpoints=deadpoints,
                           network=network, polyset=polyset, callbacks=create_callbacks, lr_round_scheduler=lr_round_scheduler)
     if not polyswyftSettings.only_plot_mode:

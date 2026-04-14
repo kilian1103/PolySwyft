@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Environments
+.env
+.venv/
+venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# pytest
+.pytest_cache/
+
+# Weights & Biases
+wandb/
+
+# PolyChord output
+chains/
+*.resume
+*.paramnames
+*.ranges
+*.stats
+*.dead-birth.txt
+*.dead.txt
+*.live.txt
+*.phys_live.txt
+*.phys_live-birth.txt
+
+# Coverage
+htmlcov/
+.coverage
+coverage.xml
+
+# PolySwyft run artifacts
+round_*/
+*.pkl
+*.npy
+*.pt

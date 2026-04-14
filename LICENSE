@@ -198,3 +198,19 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+===============================================================================
+THIRD-PARTY DEPENDENCY NOTICE
+===============================================================================
+
+PolySwyft depends on PolyChord (https://github.com/PolyChord/PolyChordLite),
+which is licensed separately under the PolyChord License Agreement. PolyChord
+is copyrighted by Will Handley, Mike Hobson & Anthony Lasenby and is licensed
+for non-commercial, academic, and research use only. Commercial use of
+PolyChord requires a separate license from the PolyChord authors
+(wh260@mrao.cam.ac.uk).
+
+Users of PolySwyft must independently comply with PolyChord's license terms.
+The Apache 2.0 license above applies solely to the PolySwyft source code and
+does not extend to or override the license terms of PolyChord or any other
+third-party dependency.

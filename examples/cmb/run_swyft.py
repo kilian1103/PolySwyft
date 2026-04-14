@@ -12,9 +12,9 @@ from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.loggers import WandbLogger
 
-from PolySwyft.PolySwyft_Network_CMB import Network
-from PolySwyft.PolySwyft_Settings import PolySwyft_Settings
-from PolySwyft.Swyft_Simulator_CMB import Simulator as Simulator_swyft
+from examples.cmb.network import Network
+from examples.cmb.swyft_simulator import Simulator as Simulator_swyft
+from polyswyft.settings import PolySwyftSettings
 
 
 def main():
@@ -22,7 +22,7 @@ def main():
     rank_gen = comm_gen.Get_rank()
     size_gen = comm_gen.Get_size()
     root = "CMB_Swyft"
-    polyswyftSettings = PolySwyft_Settings(root=root)
+    polyswyftSettings = PolySwyftSettings(root=root)
     if rank_gen == 0:
         os.makedirs(root, exist_ok=True)
     seed_everything(polyswyftSettings.seed, workers=True)
@@ -45,28 +45,20 @@ def main():
     first_bin_width = 1
     second_bin_width = 30
     divider = 30
-    # bins = np.array([np.arange(2, l_max, 1), np.arange(2, l_max, 1)]).T  # 2 to 2508 unbinned
     first_bins = np.array([np.arange(2, divider, first_bin_width), np.arange(2, divider, first_bin_width)]).T  # 2 to 29
-    # Correcting bin generation to be non-overlapping [start, end)
     l_starts = np.arange(divider, l_max, second_bin_width)
     l_ends = np.arange(divider + second_bin_width, l_max + second_bin_width, second_bin_width)
-    l_ends = np.clip(l_ends, a_min=None, a_max=l_max)  # Ensure last bin doesn't exceed l_max
+    l_ends = np.clip(l_ends, a_min=None, a_max=l_max)
     second_bins = np.array([l_starts, l_ends[:len(l_starts)]]).T
     bins = np.concatenate([first_bins, second_bins])
     bins[:, 1] += 1
-    # bin_centers = bins[:, 0]
     bin_centers = np.concatenate([first_bins[:, 0], np.mean(bins[divider - 2:], axis=1)])
 
     # planck noise
-    # pnoise, _ = planck_noise().calculate_noise()
     pnoise = None
 
-    # binned planck data, not using real data for now
-    # planck = np.loadtxt('data/planck_unbinned.txt', usecols=[1])
-    # planck = cmbs.rebin(planck, bins=bins)
     sim = Simulator_swyft(polyswyftSettings=polyswyftSettings, cmbs=cmbs, bins=bins, bin_centers=bin_centers,
                           p_noise=pnoise, cp=cp, prior_mins=np.array(prior_mins), prior_maxs=np.array(prior_maxs))
-    # obs = swyft.Sample(x=torch.as_tensor(planck)[None, :])
 
     # ['omegabh2', 'omegach2', 'tau', 'ns', 'As', 'h']
     theta_true = np.array([0.022, 0.12, 0.055, 0.965, 3.0, 0.67])

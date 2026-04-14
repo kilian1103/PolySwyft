@@ -13,12 +13,11 @@ from pytorch_lightning import seed_everything
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
-from PolySwyft.PolySwyft import PolySwyft
-from PolySwyft.PolySwyft_Network_CMB import Network
-from PolySwyft.PolySwyft_Post_Analysis import plot_analysis_of_NSNRE
-from PolySwyft.PolySwyft_Settings import PolySwyft_Settings
-from PolySwyft.PolySwyft_Simulator_CMB import Simulator
-from PolySwyft.utils import reload_data_for_plotting
+from examples.cmb.network import Network
+from examples.cmb.simulator import Simulator
+from examples.plotting import plot_analysis_of_NSNRE
+from polyswyft import PolySwyft, PolySwyftSettings
+from polyswyft.utils import reload_data_for_plotting
 
 
 def main():
@@ -36,7 +35,7 @@ def main():
            5: 0.95}
 
     root = f"CMB_PolySwyft_lr{lrs[n_lr]}"
-    polyswyftSettings = PolySwyft_Settings(root)
+    polyswyftSettings = PolySwyftSettings(root)
     polyswyftSettings.learning_rate_decay = 0.95
     # polyswyftSettings.num_summary_features = nsum
     seed_everything(polyswyftSettings.seed, workers=True)
@@ -154,8 +153,6 @@ def main():
     # plot observation
     if rank_gen == 0:
         plt.plot(l, obs[polyswyftSettings.obsKey][0].numpy(), label='Sim. Observation', c="red")
-        # for i in range(0, joints.shape[0], 1000):
-        # plt.plot(l, joints[i], color='gray', alpha=0.1, label='Sim. Samples')
         plt.xlabel(r'$\ell$')
         plt.ylabel(r"$D_\ell$")
         plt.savefig(f"{polyswyftSettings.root}/obs.pdf", bbox_inches='tight')

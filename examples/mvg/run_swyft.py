@@ -1,21 +1,21 @@
-import os
 import logging
-import lsbi.model
-###requires lsbi==0.9.0 for reproducibility
+import os
+
 import numpy as np
 import swyft
 import torch
+import wandb
 from anesthetic import MCMCSamples
 from mpi4py import MPI
 from pytorch_lightning import seed_everything
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
-from PolySwyft.PolySwyft_Network import Network
-from PolySwyft.PolySwyft_Settings import PolySwyft_Settings
-from PolySwyft.Swyft_Simulator_MultiGauss import Simulator as Simulator_swyft
-from PolySwyft.PolySwyft_Simulator_MultiGauss import Simulator
-import wandb
 from pytorch_lightning.loggers import WandbLogger
+
+from examples.mvg.network import Network
+from examples.mvg.simulator import Simulator
+from examples.mvg.swyft_simulator import Simulator as Simulator_swyft
+from polyswyft.settings import PolySwyftSettings
 
 
 def execute():
@@ -24,7 +24,7 @@ def execute():
     rank_gen = comm_gen.Get_rank()
     size_gen = comm_gen.Get_size()
     root = "MVG_Swyft"
-    polyswyftSettings = PolySwyft_Settings(root=root)
+    polyswyftSettings = PolySwyftSettings(root=root)
     seed_everything(polyswyftSettings.seed, workers=True)
     logging.basicConfig(filename=polyswyftSettings.logger_name, level=logging.INFO,
                         filemode="a")
@@ -59,10 +59,6 @@ def execute():
     mcmc_true = MCMCSamples(
         data=posterior, weights=weights.squeeze(),
         logL=true_logratios, labels=params_labels)
-    #swyft.RectBoundSampler()
-    #MVG = MultivariateNormalWithPPF(sim.model.prior())
-    #sampler = RectBoundSampler(distr=MVG, bounds=None)
-    #sampler()
 
     def create_callbacks() -> list:
         early_stopping_callback = EarlyStopping(monitor='val_loss', min_delta=0.,
@@ -71,7 +67,6 @@ def execute():
         checkpoint_callback = ModelCheckpoint(monitor='val_loss',
                                               filename='NRE_{epoch}_{val_loss:.2f}_{train_loss:.2f}', mode='min')
         return [early_stopping_callback, lr_monitor, checkpoint_callback]
-
 
 
     def round(obs, rd, bounds = None, model = None):

@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, Callable
+from typing import Callable, Dict, Tuple
 
 import anesthetic
 import matplotlib.pyplot as plt
@@ -6,13 +6,13 @@ import numpy as np
 import swyft
 from anesthetic import make_2d_axes
 
-from PolySwyft.PolySwyft_Settings import PolySwyft_Settings
-from PolySwyft.utils import compute_KL_compression, compute_KL_divergence_truth
+from polyswyft.settings import PolySwyftSettings
+from polyswyft.utils import compute_KL_compression, compute_KL_divergence_truth
 
 
 def plot_analysis_of_NSNRE(root: str, network_storage: Dict[int, swyft.SwyftModule],
                            samples_storage: Dict[int, anesthetic.Samples], dkl_storage: Dict[int, Tuple[float, float]],
-                           polyswyftSettings: PolySwyft_Settings,
+                           polyswyftSettings: PolySwyftSettings,
                            obs: swyft.Sample, true_posterior: anesthetic.Samples = None,
                            deadpoints_processing: Callable = None):
     """
@@ -22,7 +22,7 @@ def plot_analysis_of_NSNRE(root: str, network_storage: Dict[int, swyft.SwyftModu
     :param network_storage: A dictionary of networks for each round
     :param samples_storage: A dictionary of samples for each round
     :param dkl_storage: A dictionary of KL divergences for each round
-    :param polyswyftSettings: A PolySwyft_Settings object
+    :param polyswyftSettings: A PolySwyftSettings object
     :param obs: A Swyft sample of the observed data
     :param true_posterior: An anesthetic samples object of the true posterior if available
     :return:
