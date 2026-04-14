@@ -1,0 +1,89 @@
+name: Version Bump
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    # Skip if the push was the version-bump commit itself
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_PAT || github.token }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Determine version bump type
+        id: bump_type
+        run: |
+          # Get full commit messages since last tag (including bodies/footers)
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            COMMITS=$(git log --format=%B)
+          else
+            COMMITS=$(git log "$LAST_TAG"..HEAD --format=%B)
+          fi
+
+          echo "Commits since last tag:"
+          echo "$COMMITS"
+
+          if printf '%s\n' "$COMMITS" | grep -qiE 'BREAKING CHANGE:|^[a-z]+(\([^)]+\))?!:'; then
+            echo "bump=major" >> "$GITHUB_OUTPUT"
+            echo "Bump type: major"
+          elif printf '%s\n' "$COMMITS" | grep -qiE '^feat(\([^)]+\))?:'; then
+            echo "bump=minor" >> "$GITHUB_OUTPUT"
+            echo "Bump type: minor"
+          else
+            echo "bump=patch" >> "$GITHUB_OUTPUT"
+            echo "Bump type: patch"
+          fi
+
+      - name: Bump version
+        id: new_version
+        run: |
+          # Read current version from pyproject.toml
+          CURRENT=$(python -c "
+          import re
+          with open('pyproject.toml') as f:
+              m = re.search(r'version\s*=\s*\"(\d+\.\d+\.\d+)\"', f.read())
+              print(m.group(1))
+          ")
+          echo "Current version: $CURRENT"
+
+          # Compute new version
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+          BUMP="${{ steps.bump_type.outputs.bump }}"
+          case "$BUMP" in
+            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
+            minor) MINOR=$((MINOR + 1)); PATCH=0 ;;
+            patch) PATCH=$((PATCH + 1)) ;;
+          esac
+          NEW="${MAJOR}.${MINOR}.${PATCH}"
+          echo "New version: $NEW"
+          echo "version=$NEW" >> "$GITHUB_OUTPUT"
+
+          # Update pyproject.toml
+          sed -i "s/^version = \"$CURRENT\"/version = \"$NEW\"/" pyproject.toml
+
+          # Update polyswyft/__init__.py
+          sed -i "s/__version__ = \"$CURRENT\"/__version__ = \"$NEW\"/" polyswyft/__init__.py
+
+      - name: Commit and tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add pyproject.toml polyswyft/__init__.py
+          git commit -m "chore: bump version to ${{ steps.new_version.outputs.version }} [skip ci]"
+          git tag "v${{ steps.new_version.outputs.version }}"
+          git push origin master --tags

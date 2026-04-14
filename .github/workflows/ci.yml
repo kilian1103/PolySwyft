@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+
+    permissions:
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-${{ matrix.python-version }}-
+
+      - name: Install CPU-only PyTorch
+        run: pip install torch --extra-index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install package with dev and examples extras
+        run: pip install ".[dev,examples]"
+
+      - name: Run tests with coverage
+        run: |
+          pytest -m "not integration and not slow" \
+            --cov=polyswyft \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --junitxml=pytest.xml \
+            -v
+
+      - name: Add coverage to job summary
+        if: always() && matrix.python-version == '3.11'
+        run: |
+          pip install coverage
+          echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          coverage report --format=text >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Coverage comment on PR
+        if: github.event_name == 'pull_request' && matrix.python-version == '3.11'
+        uses: MishaKav/pytest-coverage-comment@v1.1.58
+        with:
+          pytest-xml-coverage-path: coverage.xml
+          junitxml-path: pytest.xml

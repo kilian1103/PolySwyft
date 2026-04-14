@@ -1,0 +1,61 @@
+name: Docs & Notebooks
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - "*.ipynb"
+      - "examples/**"
+      - "README.md"
+  schedule:
+    - cron: "0 6 * * 1" # Weekly Monday 06:00 UTC
+
+jobs:
+  validate-notebooks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install nbformat
+        run: pip install nbformat
+
+      - name: Validate notebook JSON structure
+        run: |
+          python -c "
+          import nbformat
+          import glob
+          import sys
+
+          errors = []
+          for nb_path in glob.glob('**/*.ipynb', recursive=True):
+              try:
+                  with open(nb_path) as f:
+                      nbformat.read(f, as_version=4)
+                  print(f'OK: {nb_path}')
+              except Exception as e:
+                  errors.append(f'FAIL: {nb_path}: {e}')
+                  print(f'FAIL: {nb_path}: {e}')
+
+          if errors:
+              sys.exit(1)
+          print(f'All {len(glob.glob(\"**/*.ipynb\", recursive=True))} notebooks valid.')
+          "
+
+  check-links:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check markdown links
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          use-quiet-mode: "yes"
+          config-file: ".github/markdown-link-check-config.json"
+        continue-on-error: true # Don't block CI on transient link errors
