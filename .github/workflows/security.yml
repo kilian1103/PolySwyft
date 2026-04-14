@@ -1,0 +1,33 @@
+name: Security
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  schedule:
+    - cron: "0 8 * * 1" # Weekly Monday 8am UTC
+
+jobs:
+  pip-audit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install CPU-only PyTorch
+        run: pip install torch --extra-index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install package
+        run: pip install ".[dev,examples]"
+
+      - name: Run pip-audit
+        uses: pypa/gh-action-pip-audit@v1.1.0
+        with:
+          summary: true
+          vulnerability-service: osv
