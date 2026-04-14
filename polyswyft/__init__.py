@@ -1,6 +1,6 @@
 """PolySwyft: sequential simulation-based nested sampling."""
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 from .core import PolySwyft as PolySwyft
 from .dataloader import PolySwyftDataModule as PolySwyftDataModule
