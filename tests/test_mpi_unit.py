@@ -95,9 +95,7 @@ class TestResimulateDeadpointsSingleRank:
     def setup(self, tmp_path):
         self.settings = _make_settings(tmp_path)
         self.n_deadpoints = 10
-        self.deadpoints = np.random.default_rng(0).standard_normal(
-            (self.n_deadpoints, self.settings.num_features)
-        )
+        self.deadpoints = np.random.default_rng(0).standard_normal((self.n_deadpoints, self.settings.num_features))
         self.sim = _make_mock_simulator(self.settings)
         self.comm = _make_mock_comm(rank=0, size=1)
         self.mock_mpi4py, self.mock_MPI = _make_mock_mpi(self.comm)
@@ -148,9 +146,7 @@ class TestResimulateDeadpointsMultiRank:
     def setup(self, tmp_path):
         self.settings = _make_settings(tmp_path)
         self.n_deadpoints = 10
-        self.deadpoints = np.random.default_rng(0).standard_normal(
-            (self.n_deadpoints, self.settings.num_features)
-        )
+        self.deadpoints = np.random.default_rng(0).standard_normal((self.n_deadpoints, self.settings.num_features))
         self.sim = _make_mock_simulator(self.settings)
 
         # Create round directory
