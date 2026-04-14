@@ -15,11 +15,14 @@ jobs:
 
     steps:
       - name: Check for POLYSWYFT_REPOSITORY_VERSION_BUMPER
-        if: ${{ !secrets.POLYSWYFT_REPOSITORY_VERSION_BUMPER }}
+        env:
+          PAT: ${{ secrets.POLYSWYFT_REPOSITORY_VERSION_BUMPER }}
         run: |
-          echo "::error::POLYSWYFT_REPOSITORY_VERSION_BUMPER secret is not set. A Personal Access Token is required to push to the protected master branch."
-          echo "Create a fine-grained PAT with 'Contents: Read and write' permission, add it as a repository secret named POLYSWYFT_REPOSITORY_VERSION_BUMPER."
-          exit 1
+          if [ -z "$PAT" ]; then
+            echo "::error::POLYSWYFT_REPOSITORY_VERSION_BUMPER secret is not set. A Personal Access Token is required to push to the protected master branch."
+            echo "Create a fine-grained PAT with 'Contents: Read and write' permission, add it as a repository secret named POLYSWYFT_REPOSITORY_VERSION_BUMPER."
+            exit 1
+          fi
 
       - uses: actions/checkout@v4
         with:
