@@ -102,9 +102,9 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add pyproject.toml polyswyft/__init__.py CHANGELOG.md
           git commit -m "chore: bump version to ${{ steps.new_version.outputs.version }} [skip ci]"
-          git tag "v${{ steps.new_version.outputs.version }}"
+          git tag -f "v${{ steps.new_version.outputs.version }}"
           git push origin master
-          git push origin "v${{ steps.new_version.outputs.version }}"
+          git push -f origin "v${{ steps.new_version.outputs.version }}"
 
       - name: Dispatch publish workflow
         env:
