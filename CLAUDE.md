@@ -28,7 +28,7 @@ Key equations:
 ## Development
 
 ```bash
-pip install -e ".[dev,examples]"         # install with test + example deps
+pip install "polyswyft[dev,examples]"    # install with test + example deps
 pytest -m "not integration and not slow" -v  # run unit tests
 ruff check . && ruff format --check .    # lint
 ```

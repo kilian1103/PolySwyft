@@ -1,11 +1,7 @@
-swyft==0.4.4
-typing
+polyswyft
+mpi4py>=3.0
 wandb
-anesthetic
-lsbi==0.9.0
-mpi4py
+lsbi>=0.9
 cosmopower
 jupyter
 notebook
-numpy>=1.24
-scipy>=1.11,<1.14

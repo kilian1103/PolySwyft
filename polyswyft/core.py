@@ -50,7 +50,7 @@ class PolySwyft:
         try:
             from mpi4py import MPI
         except ImportError as err:
-            raise ImportError("mpi4py is required for PolySwyft. Install it with: pip install mpi4py") from err
+            raise ImportError("mpi4py is required for PolySwyft. Install it with: pip install polyswyft[mpi]") from err
         self._comm = MPI.COMM_WORLD
         self._rank = self._comm.Get_rank()
 
