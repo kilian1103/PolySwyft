@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   bump:
@@ -104,3 +105,11 @@ jobs:
           git tag "v${{ steps.new_version.outputs.version }}"
           git push origin master
           git push origin "v${{ steps.new_version.outputs.version }}"
+
+      - name: Dispatch publish workflow
+        env:
+          GH_TOKEN: ${{ secrets.POLYSWYFT_REPOSITORY_VERSION_BUMPER }}
+        run: |
+          gh workflow run publish.yml \
+            --ref "v${{ steps.new_version.outputs.version }}" \
+            --field tag="v${{ steps.new_version.outputs.version }}"
