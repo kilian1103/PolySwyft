@@ -9,50 +9,82 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- automate changelog generation with git-cliff (#8)
-
+- Automate changelog generation with git-cliff (#8)
 
 ### Fixed
 
-- force-recreate tag in version-bump to handle rerun after failure (#9)
+- Force-recreate tag in version-bump to handle rerun after failure (#9)
+- Use GITHUB_TOKEN / PAT with correct scopes for workflow dispatch
+- Remove force-push on version tag to prevent overwriting published releases
+
+## [0.3.0] - 2026-04-15
+
+### Added
+
+- Automate changelog generation with git-cliff (#8)
 
 ## [0.2.3] - 2026-04-15
 
 ### Fixed
 
-- split branch and tag push in version-bump to trigger publish workflow (#7)
+- Split branch and tag push in version-bump to correctly trigger publish workflow (#7)
 
 ## [0.2.2] - 2026-04-15
 
 ### Fixed
 
-- add PyPI version badge to README (#6)
+- Add PyPI version badge to README (#6)
+- Automate GitHub Release creation on publish via softprops/action-gh-release
+
+## [0.2.1] - 2026-04-15
+
+### Changed
+
+- Update all install references to use PyPI package (`pip install polyswyft`) (#5)
+- Add uv install instructions to README
+- Add PolyChord third-party license notice to README
+- Quote all extras specs to prevent zsh glob expansion
 
 ## [0.2.0] - 2026-04-15
 
 ### Added
 
-- add PyPI publish workflow and update package classifiers (#4)
+- PyPI publish workflow using OIDC Trusted Publisher (#4)
+- GitHub environment protection rules for publish job
+- PyPI package classifiers (Python 3.9/3.10/3.11, Apache License, OS Independent)
+
+## [0.1.3] - 2026-04-14
+
+### Added
+
+- MPI test coverage (#3)
 
 ## [0.1.2] - 2026-04-14
 
 ### Fixed
 
-- add checkout step to claude-review workflow
+- Add checkout step to claude-review workflow
 
 ## [0.1.1] - 2026-04-14
 
-### Changed
+### Added
 
-- add CLAUDE.md and create_pr Claude Code skill (#6)
-
-- add CLAUDE.md and create_pr Claude Code skill (#1)
-
+- CLAUDE.md and create_pr Claude Code skill (#1)
 
 ### Fixed
 
-- add github_token to claude-review workflow
+- Add github_token to claude-review workflow
+- Use env var instead of secrets context in version-bump step condition
 
-- use env var instead of secrets context in version-bump step condition
+## [0.1.0] - 2025-12-10
 
+### Added
 
+- Initial release of PolySwyft as an installable Python package
+- Sequential Neural Ratio Estimation (NSNRE) combining PolyChord and swyft
+- Multi-round training with progressive improvement
+- KL-divergence convergence monitoring
+- Modular design with `PolySwyftNetwork` ABC and `PolySwyftSettings`
+- Examples for Multivariate Gaussian, Gaussian Mixture Model, and CMB cosmology
+- Weights & Biases experiment tracking support
+- MPI parallelization support via mpi4py
