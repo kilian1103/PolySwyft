@@ -25,6 +25,10 @@ Key equations:
 - `examples/` -- MVG, GMM, CMB examples (not pip-installed)
 - `tests/` -- unit tests
 
+## Changelog
+
+`CHANGELOG.md` is auto-generated from conventional commits by `git-cliff` on every version bump — do not edit it manually. Use the correct commit prefix (`feat:`, `fix:`, `refactor:`, `docs:`) so your change appears in the generated changelog under the right section. `chore:`, `test:`, and `ci:` commits are intentionally excluded.
+
 ## Development
 
 ```bash
