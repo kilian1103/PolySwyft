@@ -96,4 +96,5 @@ jobs:
           git add pyproject.toml polyswyft/__init__.py
           git commit -m "chore: bump version to ${{ steps.new_version.outputs.version }} [skip ci]"
           git tag "v${{ steps.new_version.outputs.version }}"
-          git push origin master --tags
+          git push origin master
+          git push origin "v${{ steps.new_version.outputs.version }}"
