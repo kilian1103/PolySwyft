@@ -27,7 +27,8 @@ classifiers = [
 dependencies = [
     "numpy>=1.24",
     "scipy>=1.11,<1.14",
-    "torch>=2.0",
+    "torch>=2.0,<2.3; platform_system == 'Darwin' and platform_machine == 'x86_64'",
+    "torch>=2.0; platform_system != 'Darwin' or platform_machine != 'x86_64'",
     "pytorch-lightning>=1.9,<2",
     "anesthetic>=2.0",
     "swyft==0.4.4",
