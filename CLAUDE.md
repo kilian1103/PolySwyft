@@ -25,6 +25,10 @@ Key equations:
 - `examples/` -- MVG, GMM, CMB examples (not pip-installed)
 - `tests/` -- unit tests
 
+## Changelog
+
+`CHANGELOG.md` follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format. When creating a PR, always add an entry under `## [Unreleased]` (create the section if it doesn't exist, directly below the `# Changelog` header). Use these subsections as needed: `### Added`, `### Fixed`, `### Changed`, `### Removed`. On version bump, `version-bump.yml` runs `git-cliff` to automatically convert `[Unreleased]` into the versioned section and regenerate the full file — so PR authors only ever write to `[Unreleased]`.
+
 ## Development
 
 ```bash

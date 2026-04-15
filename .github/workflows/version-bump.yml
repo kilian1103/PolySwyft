@@ -89,11 +89,17 @@ jobs:
           # Update polyswyft/__init__.py
           sed -i "s/__version__ = \"$CURRENT\"/__version__ = \"$NEW\"/" polyswyft/__init__.py
 
+      - name: Generate changelog
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --tag "v${{ steps.new_version.outputs.version }}" --output CHANGELOG.md
+
       - name: Commit and tag
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add pyproject.toml polyswyft/__init__.py
+          git add pyproject.toml polyswyft/__init__.py CHANGELOG.md
           git commit -m "chore: bump version to ${{ steps.new_version.outputs.version }} [skip ci]"
           git tag "v${{ steps.new_version.outputs.version }}"
           git push origin master
