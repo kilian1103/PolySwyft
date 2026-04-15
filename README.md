@@ -47,17 +47,17 @@ from polyswyft import PolySwyft, PolySwyftNetwork, PolySwyftSettings
 
 ```bash
 # pip
-pip install polyswyft[mpi]       # MPI support (mpi4py)
-pip install polyswyft[examples]  # lsbi for MVG/GMM examples
-pip install polyswyft[cmb]       # cmblike for CMB example
-pip install polyswyft[wandb]     # Weights & Biases tracking
-pip install polyswyft[dev]       # pytest for running tests
-pip install polyswyft[all]       # everything
+pip install "polyswyft[mpi]"       # MPI support (mpi4py)
+pip install "polyswyft[examples]"  # lsbi for MVG/GMM examples
+pip install "polyswyft[cmb]"       # cmblike for CMB example
+pip install "polyswyft[wandb]"     # Weights & Biases tracking
+pip install "polyswyft[dev]"       # pytest for running tests
+pip install "polyswyft[all]"       # everything
 
 # uv
-uv add polyswyft[mpi]
-uv add polyswyft[examples]
-uv add polyswyft[all]            # etc.
+uv add "polyswyft[mpi]"
+uv add "polyswyft[examples]"
+uv add "polyswyft[all]"            # etc.
 ```
 
 ### PolyChordLite
