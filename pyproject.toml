@@ -8,7 +8,7 @@ version = "0.4.1"
 description = "Sequential simulation-based nested sampling combining PolyChord and swyft"
 readme = "README.md"
 license = {file = "LICENSE"}
-requires-python = ">=3.9"
+requires-python = ">=3.9,<3.13"
 authors = [
     { name = "Kilian Scheutwinkel", email = "khs40@cantab.ac.uk" },
 ]
@@ -27,7 +27,7 @@ classifiers = [
 dependencies = [
     "numpy>=1.24",
     "scipy>=1.11,<1.14",
-    "torch>=2.0",
+    "torch>=2.0,<2.3",
     "pytorch-lightning>=1.9,<2",
     "anesthetic>=2.0",
     "swyft==0.4.4",
