@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11"]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     permissions:
       pull-requests: write
@@ -54,7 +54,7 @@ jobs:
             -v
 
       - name: Add coverage to job summary
-        if: always() && matrix.python-version == '3.11'
+        if: always() && matrix.python-version == '3.12'
         run: |
           pip install coverage
           echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
@@ -63,7 +63,7 @@ jobs:
           echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Coverage comment on PR
-        if: github.event_name == 'pull_request' && matrix.python-version == '3.11'
+        if: github.event_name == 'pull_request' && matrix.python-version == '3.12'
         uses: MishaKav/pytest-coverage-comment@v1.1.58
         with:
           pytest-xml-coverage-path: coverage.xml
