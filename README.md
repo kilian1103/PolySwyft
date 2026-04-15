@@ -30,7 +30,7 @@ PyTorch-based framework.
 ### Install the core package
 
 ```bash
-pip install -e .
+pip install polyswyft
 ```
 
 This installs the `polyswyft` package with its core dependencies. You can then import:
@@ -42,12 +42,12 @@ from polyswyft import PolySwyft, PolySwyftNetwork, PolySwyftSettings
 ### Optional dependencies
 
 ```bash
-pip install -e ".[mpi]"       # MPI support (mpi4py)
-pip install -e ".[examples]"  # lsbi for MVG/GMM examples
-pip install -e ".[cmb]"       # cmblike for CMB example
-pip install -e ".[wandb]"     # Weights & Biases tracking
-pip install -e ".[dev]"       # pytest for running tests
-pip install -e ".[all]"       # everything
+pip install polyswyft[mpi]       # MPI support (mpi4py)
+pip install polyswyft[examples]  # lsbi for MVG/GMM examples
+pip install polyswyft[cmb]       # cmblike for CMB example
+pip install polyswyft[wandb]     # Weights & Biases tracking
+pip install polyswyft[dev]       # pytest for running tests
+pip install polyswyft[all]       # everything
 ```
 
 ### PolyChordLite
