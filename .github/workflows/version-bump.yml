@@ -104,7 +104,7 @@ jobs:
           git commit -m "chore: bump version to ${{ steps.new_version.outputs.version }} [skip ci]"
           git tag -f "v${{ steps.new_version.outputs.version }}"
           git push origin master
-          git push -f origin "v${{ steps.new_version.outputs.version }}"
+          git push origin "v${{ steps.new_version.outputs.version }}"
 
       - name: Dispatch publish workflow
         env:
