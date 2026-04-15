@@ -4,6 +4,7 @@
 
 [![CI](https://github.com/kilian1103/PolySwyft/actions/workflows/ci.yml/badge.svg)](https://github.com/kilian1103/PolySwyft/actions/workflows/ci.yml)
 [![Lint](https://github.com/kilian1103/PolySwyft/actions/workflows/lint.yml/badge.svg)](https://github.com/kilian1103/PolySwyft/actions/workflows/lint.yml)
+[![PyPI](https://img.shields.io/pypi/v/polyswyft.svg)](https://pypi.org/project/polyswyft/)
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://python.org)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red.svg)](https://pytorch.org)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
