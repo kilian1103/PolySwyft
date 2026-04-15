@@ -30,7 +30,11 @@ PyTorch-based framework.
 ### Install the core package
 
 ```bash
+# pip
 pip install polyswyft
+
+# uv
+uv add polyswyft
 ```
 
 This installs the `polyswyft` package with its core dependencies. You can then import:
@@ -42,12 +46,18 @@ from polyswyft import PolySwyft, PolySwyftNetwork, PolySwyftSettings
 ### Optional dependencies
 
 ```bash
+# pip
 pip install polyswyft[mpi]       # MPI support (mpi4py)
 pip install polyswyft[examples]  # lsbi for MVG/GMM examples
 pip install polyswyft[cmb]       # cmblike for CMB example
 pip install polyswyft[wandb]     # Weights & Biases tracking
 pip install polyswyft[dev]       # pytest for running tests
 pip install polyswyft[all]       # everything
+
+# uv
+uv add polyswyft[mpi]
+uv add polyswyft[examples]
+uv add polyswyft[all]            # etc.
 ```
 
 ### PolyChordLite
@@ -180,6 +190,8 @@ Each `round_i/` folder contains the trained network, optimizer state, deadpoints
 ## License
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
+> **Third-party notice:** PolySwyft depends on [PolyChord](https://github.com/PolyChord/PolyChordLite), which is licensed separately under the PolyChord License Agreement for non-commercial, academic, and research use only. Commercial use of PolyChord requires a separate license from its authors. See the `THIRD-PARTY DEPENDENCY NOTICE` section at the bottom of [LICENSE](LICENSE) for the full notice.
 
 ## Contributing
 
