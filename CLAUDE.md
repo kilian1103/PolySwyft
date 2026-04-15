@@ -27,7 +27,7 @@ Key equations:
 
 ## Changelog
 
-`CHANGELOG.md` follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format. When creating a PR, always add an entry under `## [Unreleased]` (create the section if it doesn't exist, directly below the `# Changelog` header). Use these subsections as needed: `### Added`, `### Fixed`, `### Changed`, `### Removed`. On version bump, `version-bump.yml` runs `git-cliff` to automatically convert `[Unreleased]` into the versioned section and regenerate the full file — so PR authors only ever write to `[Unreleased]`.
+`CHANGELOG.md` is auto-generated from conventional commits by `git-cliff` on every version bump — do not edit it manually. Use the correct commit prefix (`feat:`, `fix:`, `refactor:`, `docs:`) so your change appears in the generated changelog under the right section. `chore:`, `test:`, and `ci:` commits are intentionally excluded.
 
 ## Development
 

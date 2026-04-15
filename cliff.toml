@@ -13,7 +13,7 @@ body = """
 {% for group, commits in commits | group_by(attribute="group") %}
 ### {{ group }}
 {% for commit in commits %}
-- {{ commit.message | split(pat="\n") | first | trim }}\
+- {{ commit.message | split(pat="\n") | first | trim }}
 {% endfor %}
 {% endfor %}
 """
