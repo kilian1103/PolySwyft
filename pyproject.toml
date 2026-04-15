@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "polyswyft"
-version = "0.4.1"
+version = "0.4.2"
 description = "Sequential simulation-based nested sampling combining PolyChord and swyft"
 readme = "README.md"
 license = {file = "LICENSE"}
