@@ -24,8 +24,8 @@ class PolySwyftSettings:
     ----------
     root : str
         Top-level output directory for the run. All round artefacts
-        (``{root}/round_{i}/``), the run log, and the pickled settings are
-        placed here. Created on demand.
+        (``{root}/{child_root}_{i}/``), the run log, and the pickled
+        settings are placed here. Created on demand.
 
     Attributes
     ----------

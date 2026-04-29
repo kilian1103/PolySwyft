@@ -37,7 +37,7 @@ pip install "polyswyft[dev,examples]"     # install with test + example deps
 pytest -m "not integration and not slow" -v  # run unit tests
 ruff check . && ruff format --check .     # lint
 pip install "polyswyft[docs]"             # docs deps
-sphinx-build -W docs/ docs/_build/html    # build docs (RTD does this automatically)
+sphinx-build docs/ docs/_build/html       # build docs (matches RTD's fail_on_warning=false)
 ```
 
 - PolyChord must be installed separately (build from source)

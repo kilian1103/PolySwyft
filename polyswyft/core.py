@@ -5,17 +5,18 @@ section 3.2 of the paper: simulate using the latest dead points, retrain
 the NRE on the cumulative dataset, run PolyChord on the trained
 log-ratio, compute KL diagnostics, and either terminate or continue.
 
-All on-disk artefacts are written under ``polyswyftSettings.root``::
+All on-disk artefacts are written under ``polyswyftSettings.root`` using
+the configurable ``child_root`` prefix (default ``"round"``)::
 
     {root}/
         settings.pkl                  # pickled PolySwyftSettings
-        round_0/                      # per-round subdirectory
+        {child_root}_0/               # per-round subdirectory
             z.npy, x.npy              # training dataset (theta, D)
             NRE_network.pt            # trained NRE state-dict
             optimizer_file.pt         # optimiser state
             samples.txt, *.dead, ...  # PolyChord output chains
             enhanced_run/             # optional second-pass chains
-        round_1/
+        {child_root}_1/
         ...
 """
 

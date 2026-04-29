@@ -21,9 +21,12 @@ from polyswyft.settings import PolySwyftSettings
 class PolySwyftSequential(Dataset):
     """Cumulative-across-rounds ``torch.utils.data.Dataset`` for NSNRE training.
 
-    Loads ``{root}/round_{k}/{targetKey}.npy`` and
-    ``{root}/round_{k}/{obsKey}.npy`` for ``k = 0..rd`` using ``mmap_mode='r'``,
-    then exposes a flat index over the union. Each ``__getitem__`` call
+    Loads ``{root}/{child_root}_{k}/{targetKey}.npy`` and
+    ``{root}/{child_root}_{k}/{obsKey}.npy`` for ``k = 0..rd`` using
+    ``mmap_mode='r'``, then exposes a flat index over the union. The
+    per-round directory prefix matches the one written by
+    :class:`polyswyft.core.PolySwyft` and ``polyswyft.utils.resimulate_deadpoints``.
+    Each ``__getitem__`` call
     returns one ``(theta, D)`` pair as a dict with the keys defined in
     ``PolySwyftSettings.targetKey`` / ``obsKey``.
 
@@ -61,7 +64,10 @@ class PolySwyftSequential(Dataset):
         self.index_map: list[tuple[int, int]] = []
 
         for round_id in range(self.rd + 1):
-            round_dir = os.path.join(self.polyswyftSettings.root, f"round_{round_id}")
+            round_dir = os.path.join(
+                self.polyswyftSettings.root,
+                f"{self.polyswyftSettings.child_root}_{round_id}",
+            )
             theta_path = os.path.join(round_dir, f"{self.polyswyftSettings.targetKey}.npy")
             obs_path = os.path.join(round_dir, f"{self.polyswyftSettings.obsKey}.npy")
 
