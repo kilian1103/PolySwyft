@@ -1,3 +1,12 @@
+"""Reference :class:`PolySwyftNetwork` for the GMM example.
+
+Wraps ``swyft.LogRatioEstimator_Ndim`` over the full joint and uses the
+``lsbi.MixtureModel`` prior bijector to sample inside PolyChord's unit
+cube convention. The categorical-component prior plus correlated
+component covariances make TNRE's rectangular truncation infeasible
+(see paper section 4.2 discussion).
+"""
+
 import numpy as np
 import swyft
 import torch

@@ -5,6 +5,7 @@
 [![CI](https://github.com/kilian1103/PolySwyft/actions/workflows/ci.yml/badge.svg)](https://github.com/kilian1103/PolySwyft/actions/workflows/ci.yml)
 [![Lint](https://github.com/kilian1103/PolySwyft/actions/workflows/lint.yml/badge.svg)](https://github.com/kilian1103/PolySwyft/actions/workflows/lint.yml)
 [![PyPI](https://img.shields.io/pypi/v/polyswyft.svg)](https://pypi.org/project/polyswyft/)
+[![Docs](https://readthedocs.org/projects/polyswyft/badge/?version=latest)](https://polyswyft.readthedocs.io/en/latest/)
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://python.org)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red.svg)](https://pytorch.org)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -17,6 +18,9 @@
 **PolySwyft** is an implementation of a Nested Sampling Neural-Ratio-Estimator (NSNRE) that combines
 [PolyChord](https://github.com/PolyChord/PolyChordLite) and [swyft](https://github.com/undark-lab/swyft) in a
 PyTorch-based framework.
+
+**Documentation:** [polyswyft.readthedocs.io](https://polyswyft.readthedocs.io)
+**Paper:** [arXiv:2512.08316](https://arxiv.org/abs/2512.08316)
 
 ### Key Features
 

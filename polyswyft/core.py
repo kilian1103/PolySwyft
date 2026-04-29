@@ -1,3 +1,25 @@
+"""Core orchestrator for the NSNRE cycle.
+
+The :class:`PolySwyft` class drives the five-phase loop described in
+section 3.2 of the paper: simulate using the latest dead points, retrain
+the NRE on the cumulative dataset, run PolyChord on the trained
+log-ratio, compute KL diagnostics, and either terminate or continue.
+
+All on-disk artefacts are written under ``polyswyftSettings.root`` using
+the configurable ``child_root`` prefix (default ``"round"``)::
+
+    {root}/
+        settings.pkl                  # pickled PolySwyftSettings
+        {child_root}_0/               # per-round subdirectory
+            z.npy, x.npy              # training dataset (theta, D)
+            NRE_network.pt            # trained NRE state-dict
+            optimizer_file.pt         # optimiser state
+            samples.txt, *.dead, ...  # PolyChord output chains
+            enhanced_run/             # optional second-pass chains
+        {child_root}_1/
+        ...
+"""
+
 from __future__ import annotations
 
 import logging
@@ -25,6 +47,30 @@ if TYPE_CHECKING:
 
 
 class PolySwyft:
+    """Orchestrator for the sequential NSNRE cycle.
+
+    Holds references to the simulator, observation, NRE template, and
+    PolyChord settings, then drives the round-by-round retrain/sample loop
+    via :meth:`execute_NSNRE_cycle`.
+
+    Diagnostics produced during the cycle are stored as instance dicts
+    keyed by round index (or by ``"current"`` / ``"previous"``):
+
+    Attributes
+    ----------
+    network_storage : dict
+        Networks indexed by ``"current"`` / ``"previous"`` for the latest
+        two rounds.
+    samples_storage : dict
+        Anesthetic ``NestedSamples`` indexed by ``"current"`` / ``"previous"``.
+    root_storage : dict[int, str]
+        Per-round output directory paths.
+    dkl_storage : dict[int, tuple[float, float]]
+        ``KL(P_i || P_{i-1})`` (mean, std) per round, populated from round 1.
+    dkl_compression_storage : dict[int, tuple[float, float]]
+        ``KL(P_i || pi)`` (mean, std) per round.
+    """
+
     def __init__(
         self,
         polyswyftSettings: PolySwyftSettings,
@@ -37,15 +83,43 @@ class PolySwyft:
         lr_round_scheduler: Callable = None,
         deadpoints_processing: Callable = None,
     ):
-        """
-        Initialize the PolySwyft object.
-        :param polyswyftSettings: A PolySwyftSettings object
-        :param sim: A swyft simulator object
-        :param obs: A swyft sample of the observed data
-        :param deadpoints_samplse: An array of the deadpoints samplses
-        :param network: A swyft network object
-        :param polyset: A PolyChordSettings object
-        :param callbacks: A callable object for instantiating the new callbacks of the pl.trainer
+        """Initialise a PolySwyft orchestrator.
+
+        Parameters
+        ----------
+        polyswyftSettings : PolySwyftSettings
+            Run configuration; controls round count, training hyper-params,
+            and output paths.
+        sim : swyft.Simulator
+            Forward simulator producing joint ``(theta, D)`` pairs.
+        obs : swyft.Sample
+            Observed data ``D_obs`` PolyChord conditions on each round.
+        deadpoints : np.ndarray
+            Initial parameter samples for round 0; typically prior draws of
+            shape ``(n_training_samples, num_features)``.
+        network : PolySwyftNetwork
+            NRE template; ``network.get_new_network()`` is called at the
+            start of every round.
+        polyset : PolyChordSettings
+            PolyChord run settings (``nlive``, ``precision_criterion``,
+            etc.). ``base_dir`` is overwritten per round.
+        callbacks : callable
+            Zero-arg factory returning a fresh list of Lightning callbacks
+            per round (e.g. ``EarlyStopping``, ``ModelCheckpoint``).
+        lr_round_scheduler : callable, optional
+            Map ``rd -> learning_rate`` invoked at the start of each round
+            to update the optimiser's ``lr``. ``None`` keeps the network
+            default.
+        deadpoints_processing : callable, optional
+            Map ``(deadpoints_samples, rd) -> deadpoints_samples`` applied
+            after each PolyChord run, e.g. to truncate or reweight the
+            dead-point set fed into the next round.
+
+        Raises
+        ------
+        ImportError
+            If ``mpi4py`` is not installed; PolySwyft requires MPI for the
+            full cycle.
         """
         try:
             from mpi4py import MPI
@@ -71,10 +145,30 @@ class PolySwyft:
         self.current_key = "current"
         self.previous_key = "previous"
 
-    def execute_NSNRE_cycle(self):
-        """
-        Execute the sequential nested sampling neural ratio estimation cycle.
-        :return:
+    def execute_NSNRE_cycle(self) -> None:
+        """Run the full NSNRE cycle.
+
+        Creates ``self.polyswyftSettings.root`` if absent, pickles the
+        settings, optionally resumes from round
+        ``polyswyftSettings.NRE_start_from_round - 1`` artefacts, then
+        dispatches to either :meth:`_cyclic_rounds` (fixed budget) or
+        :meth:`_cyclic_kl` (adaptive termination on
+        ``KL(P_i || P_{i-1})``) depending on
+        ``polyswyftSettings.cyclic_rounds``.
+
+        Side effects
+        ------------
+        Writes per-round artefacts under
+        ``{polyswyftSettings.root}/{child_root}_{rd}/`` and populates
+        ``self.network_storage``, ``self.samples_storage``,
+        ``self.root_storage``, ``self.dkl_storage``,
+        ``self.dkl_compression_storage``.
+
+        Raises
+        ------
+        ValueError
+            When resuming with ``NRE_start_from_round > NRE_num_retrain_rounds``
+            in cyclic-rounds mode.
         """
         self.logger = logging.getLogger(self.polyswyftSettings.logger_name)
 
@@ -112,11 +206,16 @@ class PolySwyft:
         else:
             self._cyclic_kl()
 
-    def _cyclic_rounds(self):
+    def _cyclic_rounds(self) -> None:
+        """Run a fixed number of NSNRE rounds (``NRE_num_retrain_rounds``)."""
         for rd in range(self.polyswyftSettings.NRE_start_from_round, self.polyswyftSettings.NRE_num_retrain_rounds + 1):
             self._cycle(rd)
 
-    def _cyclic_kl(self):
+    def _cyclic_kl(self) -> None:
+        """Run rounds adaptively until ``|KL(P_i || P_{i-1})| < termination_abs_dkl``.
+
+        Experimental — see ``polyswyftSettings.cyclic_rounds`` docstring.
+        """
         DKL_info = (100, 100)
         DKL, DKL_std = DKL_info
         rd = self.polyswyftSettings.NRE_start_from_round
@@ -126,7 +225,29 @@ class PolySwyft:
             rd += 1
         self.polyswyftSettings.NRE_num_retrain_rounds = rd - 1
 
-    def _cycle(self, rd):
+    def _cycle(self, rd: int) -> None:
+        """Execute one NSNRE round: simulate, train NRE, run PolyChord, score KL.
+
+        Steps (in order):
+        1. ``resimulate_deadpoints`` materialises ``(theta, D)`` for the
+           current dead-point set.
+        2. A fresh network is instantiated; under
+           ``continual_learning_mode`` it is warm-started from the previous
+           round's checkpoint.
+        3. ``swyft.SwyftTrainer.fit`` trains on the cumulative dataset via
+           :class:`PolySwyftDataModule`.
+        4. ``pypolychord.run_polychord`` is invoked with
+           ``network.logRatio`` as the likelihood callback.
+        5. Optionally, a second PolyChord pass with boosted live points
+           runs at the chosen posterior contour.
+        6. ``KL(P_i || P_{i-1})`` and ``KL(P_i || pi)`` are computed and
+           cached in ``self.dkl_storage`` / ``self.dkl_compression_storage``.
+
+        Parameters
+        ----------
+        rd : int
+            Round index (zero-based).
+        """
 
         ### start NRE training section ###
         self.logger.info("training network round: " + str(rd))

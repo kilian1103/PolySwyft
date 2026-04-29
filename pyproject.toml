@@ -41,6 +41,11 @@ wandb = ["wandb"]
 examples = ["lsbi>=0.9"]
 cmb = ["cosmopower"]
 dev = ["pytest>=7.0", "pytest-cov>=4.0", "ruff>=0.4"]
+docs = [
+    "sphinx>=7",
+    "furo>=2024.1",
+    "sphinx-autodoc-typehints>=2.0",
+]
 notebook = ["jupyter", "notebook"]
 all = [
     "mpi4py>=3.0",
@@ -50,13 +55,18 @@ all = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
     "ruff>=0.4",
+    "sphinx>=7",
+    "furo>=2024.1",
+    "sphinx-autodoc-typehints>=2.0",
     "jupyter",
     "notebook",
 ]
 
 [project.urls]
 Homepage = "https://github.com/kilian1103/PolySwyft"
-Documentation = "https://arxiv.org/abs/2512.08316"
+Documentation = "https://polyswyft.readthedocs.io"
+Paper = "https://arxiv.org/abs/2512.08316"
+Issues = "https://github.com/kilian1103/PolySwyft/issues"
 
 [tool.setuptools.packages.find]
 include = ["polyswyft*"]
@@ -88,7 +98,7 @@ exclude_lines = [
     "@abstractmethod",
 ]
 show_missing = true
-fail_under = 40
+fail_under = 60
 
 [tool.ruff]
 target-version = "py39"

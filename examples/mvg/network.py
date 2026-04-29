@@ -1,3 +1,10 @@
+"""Reference :class:`PolySwyftNetwork` for the MVG example.
+
+Wraps a single full-joint ``swyft.LogRatioEstimator_Ndim`` and uses the
+analytical ``lsbi`` prior bijector (``polyswyftSettings.model.prior().bijector``)
+to map PolyChord's unit cube into the prior space.
+"""
+
 import numpy as np
 import swyft
 import torch

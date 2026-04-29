@@ -1,3 +1,12 @@
+"""Reference :class:`PolySwyftNetwork` for the CMB example.
+
+Wraps ``swyft.LogRatioEstimator_Ndim`` over the full 6-d cosmological
+parameter joint. The prior is uniform on each parameter (see Table 1 in
+the paper); bounds are encoded in ``cmblike.cmb.CMB``. Spectra are
+binned and pre-processed (normalisation, log-transform, standardisation)
+before being fed into the swyft network.
+"""
+
 import numpy as np
 import swyft
 import torch
