@@ -54,3 +54,6 @@ round_*/
 
 # Sphinx build output
 docs/_build/
+
+# Local-only paper revision notes
+PAPER_REVISION_PLAN.md
