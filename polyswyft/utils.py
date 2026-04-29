@@ -184,9 +184,11 @@ def compute_KL_divergence_truth(
 def compute_KL_compression(samples: anesthetic.NestedSamples, polyswyftSettings: PolySwyftSettings):
     """Estimate ``KL(P_i || pi)`` — compression of prior to posterior at round ``i``.
 
-    Implements paper eq. (12). Used both as a convergence diagnostic
-    (PolySwyft should terminate only when this exceeds the user-chosen
-    ``C_comp``) and as the reported compression in the per-round KL plots.
+    Implements paper eq. (12). Used as the reported compression in the
+    per-round KL plots and as a manual diagnostic for the practitioner;
+    the current code does **not** terminate on this metric (see
+    :class:`polyswyft.core.PolySwyft` for the actual termination paths,
+    which are either fixed-round or based on ``termination_abs_dkl``).
 
     Parameters
     ----------
@@ -221,10 +223,10 @@ def reload_data_for_plotting(
 ]:
     """Reload per-round artefacts from disk for post-hoc plotting.
 
-    Walks ``{root}/round_0..round_{until_round}/`` and restores the trained
-    network, PolyChord chains, and ``KL(P_i || P_{i-1})`` value for each
-    round. Designed for use after a completed run when only plots need to
-    be regenerated.
+    Walks ``{root}/{child_root}_0../{child_root}_{until_round}/`` and
+    restores the trained network, PolyChord chains, and
+    ``KL(P_i || P_{i-1})`` value for each round. Designed for use after a
+    completed run when only plots need to be regenerated.
 
     Parameters
     ----------
@@ -326,16 +328,19 @@ def resimulate_deadpoints(deadpoints: np.ndarray, polyswyftSettings: PolySwyftSe
 
     Returns
     -------
-    tuple[torch.Tensor, torch.Tensor]
-        ``(thetas, Ds)`` after MPI gather and shuffle. Persisted to disk
-        on rank 0.
+    tuple[np.ndarray, np.ndarray]
+        ``(thetas, Ds)`` after MPI gather and shuffle. The shuffle path
+        on rank 0 routes through ``np.concatenate``, so the broadcasted
+        return values are NumPy arrays. Persisted to disk on rank 0.
 
     Raises
     ------
     ImportError
         If ``mpi4py`` is not installed.
     """
-    logger = polyswyftSettings.logger
+    import logging
+
+    logger = getattr(polyswyftSettings, "logger", None) or logging.getLogger(polyswyftSettings.logger_name)
     try:
         from mpi4py import MPI
     except ImportError as err:

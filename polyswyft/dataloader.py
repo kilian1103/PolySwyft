@@ -135,7 +135,8 @@ class PolySwyftDataModule(pl.LightningDataModule):
     Raises
     ------
     ValueError
-        If neither ``lengths`` nor ``fractions`` is provided.
+        If neither ``lengths`` nor ``fractions`` is provided, or if both
+        are provided simultaneously.
     """
 
     def __init__(
@@ -150,6 +151,8 @@ class PolySwyftDataModule(pl.LightningDataModule):
         on_after_load_sample: Optional[Callable] = None,
     ):
         super().__init__()
+        if lengths is not None and fractions is not None:
+            raise ValueError("Pass either `lengths` or `fractions`, not both.")
         self.polyswyftSettings = polyswyftSettings
         self.rd = rd
         self.batch_size = batch_size
