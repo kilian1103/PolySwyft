@@ -137,8 +137,8 @@ class PolySwyftSettings:
     n_increased_livepoints : int
         Live-point count to enforce at the boosted contour.
     increased_livepoints_fileroot : str
-        Subdirectory name inside ``{root}/round_{i}/`` for the boosted run's
-        chains.
+        Subdirectory name inside ``{root}/{child_root}_{i}/`` for the
+        boosted run's chains.
 
     only_plot_mode : bool
         If ``True``, skip the NSNRE cycle and re-plot from existing artefacts
