@@ -135,8 +135,9 @@ class PolySwyftDataModule(pl.LightningDataModule):
     Raises
     ------
     ValueError
-        If neither ``lengths`` nor ``fractions`` is provided, or if both
-        are provided simultaneously.
+        If neither ``lengths`` nor ``fractions`` is provided, if both are
+        provided simultaneously, or if ``fractions`` contains negative
+        values or sums to zero.
     """
 
     def __init__(
@@ -153,6 +154,10 @@ class PolySwyftDataModule(pl.LightningDataModule):
         super().__init__()
         if lengths is not None and fractions is not None:
             raise ValueError("Pass either `lengths` or `fractions`, not both.")
+        if fractions is not None:
+            arr = np.asarray(fractions, dtype=float)
+            if (arr < 0).any() or not arr.sum() > 0:
+                raise ValueError("`fractions` must be non-negative with a positive sum.")
         self.polyswyftSettings = polyswyftSettings
         self.rd = rd
         self.batch_size = batch_size

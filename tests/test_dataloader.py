@@ -147,6 +147,24 @@ class TestPolySwyftDataModule:
                 batch_size=8,
             )
 
+    def test_init_zero_fractions_raises(self, round_data_on_disk):
+        with pytest.raises(ValueError, match="fractions"):
+            PolySwyftDataModule(
+                polyswyftSettings=round_data_on_disk,
+                rd=0,
+                fractions=[0.0, 0.0, 0.0],
+                batch_size=8,
+            )
+
+    def test_init_negative_fraction_raises(self, round_data_on_disk):
+        with pytest.raises(ValueError, match="fractions"):
+            PolySwyftDataModule(
+                polyswyftSettings=round_data_on_disk,
+                rd=0,
+                fractions=[-0.1, 0.5, 0.6],
+                batch_size=8,
+            )
+
     def test_train_dataloader_yields_batches(self, round_data_on_disk):
         dm = PolySwyftDataModule(
             polyswyftSettings=round_data_on_disk,
