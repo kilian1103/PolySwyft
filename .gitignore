@@ -51,3 +51,6 @@ round_*/
 *.pkl
 *.npy
 *.pt
+
+# Sphinx build output
+docs/_build/

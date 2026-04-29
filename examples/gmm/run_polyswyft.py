@@ -1,3 +1,17 @@
+"""End-to-end PolySwyft example: 5-d Gaussian-mixture multimodal inference.
+
+Reproduces the GMM result of section 4.2 of the paper:
+``dim(theta, D) = (5, 100)`` with four correlated mixture components
+sampled via ``lsbi.MixtureModel``. Analytical posterior samples are
+generated directly to score PolySwyft.
+
+Run with::
+
+    mpirun -n 60 python -m examples.gmm.run_polyswyft
+
+Requires ``polyswyft[examples,mpi]``.
+"""
+
 import logging
 
 import anesthetic

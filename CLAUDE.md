@@ -24,6 +24,7 @@ Key equations:
 - `polyswyft/utils.py` -- KL divergence computation, deadpoint resimulation, plotting reload
 - `examples/` -- MVG, GMM, CMB examples (not pip-installed)
 - `tests/` -- unit tests
+- `docs/` -- Sphinx site (autodoc-driven), built on Read the Docs at https://polyswyft.readthedocs.io
 
 ## Changelog
 
@@ -32,9 +33,11 @@ Key equations:
 ## Development
 
 ```bash
-pip install "polyswyft[dev,examples]"    # install with test + example deps
+pip install "polyswyft[dev,examples]"     # install with test + example deps
 pytest -m "not integration and not slow" -v  # run unit tests
-ruff check . && ruff format --check .    # lint
+ruff check . && ruff format --check .     # lint
+pip install "polyswyft[docs]"             # docs deps
+sphinx-build -W docs/ docs/_build/html    # build docs (RTD does this automatically)
 ```
 
 - PolyChord must be installed separately (build from source)

@@ -1,3 +1,18 @@
+"""End-to-end PolySwyft example: cosmological parameter inference from CMB.
+
+Reproduces the CMB result of section 4.3 of the paper:
+``dim(theta, D) = (6, 111)`` with cosmological parameters
+``(omega_b, omega_CMB, tau, n_s, ln10^10 A_s, h)`` and binned Cl spectra.
+The simulator wraps ``CosmoPower`` (neural-net emulator of CAMB) via
+``cmb-likelihood`` for fast spectrum generation.
+
+Run with::
+
+    mpirun -n 60 python -m examples.cmb.run_polyswyft
+
+Requires ``polyswyft[examples,mpi,cmb]``.
+"""
+
 import logging
 import sys
 

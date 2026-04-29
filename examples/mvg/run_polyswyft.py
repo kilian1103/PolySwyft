@@ -1,3 +1,17 @@
+"""End-to-end PolySwyft example: 5-d multivariate Gaussian inference.
+
+Reproduces the MVG result of section 4.1 of the paper. Uses ``lsbi`` to
+construct an analytical linear-Gaussian simulator with
+``dim(theta, D) = (5, 100)``; the closed-form posterior is sampled
+directly and used to score PolySwyft via ``KL(P_true || P_i)``.
+
+Run with::
+
+    mpirun -n 60 python -m examples.mvg.run_polyswyft
+
+Requires ``polyswyft[examples,mpi]``.
+"""
+
 import logging
 
 import numpy as np
