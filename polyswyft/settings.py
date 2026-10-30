@@ -108,7 +108,8 @@ class PolySwyftSettings:
     cyclic_rounds : bool
         If ``True``, run a fixed number of rounds (``NRE_num_retrain_rounds``).
         If ``False``, terminate adaptively once
-        ``KL(P_i || P_{i-1}) < termination_abs_dkl``.
+        ``|KL(P_i || P_{i-1})| < termination_abs_dkl`` and
+        ``KL(P_i || pi) > termination_min_compression``.
         Note: the adaptive (``cyclic_rounds=False``) path is experimental.
     NRE_num_retrain_rounds : int
         Maximum number of NSNRE rounds.
@@ -117,13 +118,16 @@ class PolySwyftSettings:
         ``NRE_start_from_round - 1``); set to ``0`` to start fresh.
     termination_abs_dkl : float
         KL threshold for the experimental adaptive-termination path.
+    termination_min_compression : float
+        Minimum ``KL(P_i || pi)`` (paper ``C_comp``) that must also be
+        exceeded before the adaptive path stops. ``0.0`` disables the check.
     n_DKL_estimates : int
         Number of bootstrap repetitions used by ``anesthetic.logw`` /
         ``anesthetic.logZ`` to error-bar the KL diagnostics.
 
     use_noise_resampling : bool
         If ``True``, draw multiple ``D`` realisations per ``theta`` (Section
-        3.6.3 of the paper) to enrich the training set.
+        3.8.4 of the paper) to enrich the training set.
     n_noise_resampling_samples : int
         Number of noise resamples per dead point when
         ``use_noise_resampling`` is on.
@@ -188,7 +192,8 @@ class PolySwyftSettings:
         self.learning_rate_decay = 0.99
 
         # Lightning
-        self.dm_kwargs = {"fractions": [0.8, 0.1, 0.1], "batch_size": 64, "shuffle": False, "num_workers": 0}
+        # shuffle=True: swyft builds disjoint pairs by rolling each batch, so reshuffling gives new negatives every epoch
+        self.dm_kwargs = {"fractions": [0.8, 0.1, 0.1], "batch_size": 64, "shuffle": True, "num_workers": 0}
         self.trainer_kwargs = {
             "accelerator": "cpu",
             "devices": 60,
@@ -213,6 +218,7 @@ class PolySwyftSettings:
         self.NRE_num_retrain_rounds = 20
         self.NRE_start_from_round = 0
         self.termination_abs_dkl = 0.2
+        self.termination_min_compression = 0.0
         self.n_DKL_estimates = 100
 
         # Dynamic nested sampling / data augmentation

@@ -2,8 +2,8 @@
 
 Implements the convergence metrics referenced by the NSNRE cycle:
 
-* :func:`compute_KL_divergence` — paper eq. (10), ``KL(P_i || P_{i-1})``.
-* :func:`compute_KL_compression` — paper eq. (12), ``KL(P_i || pi)``.
+* :func:`compute_KL_divergence` — paper eq. (12), ``KL(P_i || P_{i-1})``.
+* :func:`compute_KL_compression` — paper eq. (14), ``KL(P_i || pi)``.
 * :func:`compute_KL_divergence_truth` — analytical
   ``KL(P_true || P_i)`` for toy problems with closed-form posteriors.
 
@@ -66,7 +66,7 @@ def compute_KL_divergence(
 ) -> tuple[float, float]:
     """Estimate ``KL(P_i || P_{i-1})`` between two PolyChord rounds.
 
-    Implements paper eq. (10): each summand is
+    Implements paper eq. (12): each summand is
 
     .. math::
         \\log r_i^*(\\theta_n, D_{obs}) - \\log Z_{NS,i}
@@ -142,7 +142,9 @@ def compute_KL_divergence_truth(
     network : swyft.SwyftModule
         Trained NRE for round ``i``.
     true_posterior : anesthetic.Samples
-        Direct draws from the analytical posterior with unit weights.
+        Draws from the analytical posterior; ``w_n`` in paper eq. (15) are
+        taken from ``true_posterior.get_weights()`` (unit weights for direct
+        draws).
     samples : anesthetic.Samples
         Round-i PolyChord output; only its ``logZ`` is used as ``log Z_NS``.
     obs : swyft.Sample
@@ -152,7 +154,7 @@ def compute_KL_divergence_truth(
     -------
     tuple[float, float]
         Mean and standard deviation of the KL estimate across the
-        ``true_posterior`` sample bootstrap.
+        ``n_DKL_estimates`` nested-sampling realisations of ``log Z_NS``.
     """
     swyft_samples = {
         polyswyftSettings.targetKey: torch.as_tensor(
@@ -175,7 +177,9 @@ def compute_KL_divergence_truth(
         - true_prior[:, None]
         + samples.logZ(polyswyftSettings.n_DKL_estimates).values
     )
-    DKL_estimates = logpqs.mean(axis=0)
+    weights = np.asarray(true_posterior.get_weights(), dtype=float)
+    weights = weights / weights.sum()
+    DKL_estimates = (weights[:, None] * logpqs).sum(axis=0)
     DKL = DKL_estimates.mean()
     DKL_err = DKL_estimates.std()
     return (DKL, DKL_err)
@@ -184,11 +188,10 @@ def compute_KL_divergence_truth(
 def compute_KL_compression(samples: anesthetic.NestedSamples, polyswyftSettings: PolySwyftSettings):
     """Estimate ``KL(P_i || pi)`` — compression of prior to posterior at round ``i``.
 
-    Implements paper eq. (12). Used as the reported compression in the
-    per-round KL plots and as a manual diagnostic for the practitioner;
-    the current code does **not** terminate on this metric (see
-    :class:`polyswyft.core.PolySwyft` for the actual termination paths,
-    which are either fixed-round or based on ``termination_abs_dkl``).
+    Implements paper eq. (14), which is exactly anesthetic's
+    ``NestedSamples.D_KL`` for a run whose ``logL`` is ``log r_i^*``.
+    Reported in the per-round KL plots and used as the ``C_comp`` conjunct
+    of the adaptive termination path (``termination_min_compression``).
 
     Parameters
     ----------
@@ -203,13 +206,8 @@ def compute_KL_compression(samples: anesthetic.NestedSamples, polyswyftSettings:
     tuple[float, float]
         Mean and standard deviation of the bootstrapped KL estimate.
     """
-    logw = samples.logw(polyswyftSettings.n_DKL_estimates)
-    logpqs = samples["logL"].values[:, None] - samples.logZ(logw).values
-    logw -= logsumexp(logw, axis=0)
-    DKL_estimates = (np.exp(logw).T * logpqs.T).sum(axis=1)
-    DKL = DKL_estimates.mean()
-    DKL_err = DKL_estimates.std()
-    return DKL, DKL_err
+    DKL_estimates = samples.D_KL(polyswyftSettings.n_DKL_estimates)
+    return DKL_estimates.mean(), DKL_estimates.std()
 
 
 def reload_data_for_plotting(

@@ -1,7 +1,7 @@
 """Core orchestrator for the NSNRE cycle.
 
 The :class:`PolySwyft` class drives the five-phase loop described in
-section 3.2 of the paper: simulate using the latest dead points, retrain
+section 3.1 and figure 4 of the paper: simulate using the latest dead points, retrain
 the NRE on the cumulative dataset, run PolyChord on the trained
 log-ratio, compute KL diagnostics, and either terminate or continue.
 
@@ -130,6 +130,7 @@ class PolySwyft:
 
         self.polyswyftSettings = polyswyftSettings
         self.polyset = polyset
+        self._polyset_seed = polyset.seed  # offset per round so initial live points differ between rounds
         self.sim = sim
         self.obs = obs
         self.callbacks = callbacks
@@ -191,14 +192,20 @@ class PolySwyft:
                 f"{self.polyswyftSettings.root}/{self.polyswyftSettings.child_root}_"
                 f"{self.polyswyftSettings.NRE_start_from_round - 1}"
             )
-            deadpoints = anesthetic.read_chains(root=f"{root}/{self.polyset.file_root}")
-            self.deadpoints_samples = deadpoints.iloc[:, : self.polyswyftSettings.num_features].to_numpy()
+            chains_root = root
+            if self.polyswyftSettings.use_livepoint_increasing:
+                chains_root = f"{root}/{self.polyswyftSettings.increased_livepoints_fileroot}"
+            deadpoints = anesthetic.read_chains(root=f"{chains_root}/{self.polyset.file_root}")
             network = self.network_model.get_new_network()
             network.load_state_dict(torch.load(f"{root}/{self.polyswyftSettings.neural_network_file}"))
             network.double()
             self.root_storage[self.polyswyftSettings.NRE_start_from_round - 1] = root
             self.network_storage[self.previous_key] = network
             self.samples_storage[self.previous_key] = deadpoints
+            # same order as the end of ``_cycle``: store raw chains, then post-process for training
+            if callable(self.deadpoints_processing):
+                deadpoints = self.deadpoints_processing(deadpoints, self.polyswyftSettings.NRE_start_from_round - 1)
+            self.deadpoints_samples = deadpoints.iloc[:, : self.polyswyftSettings.num_features].to_numpy()
 
         ### execute main cycle ###
         if self.polyswyftSettings.cyclic_rounds:
@@ -212,18 +219,26 @@ class PolySwyft:
             self._cycle(rd)
 
     def _cyclic_kl(self) -> None:
-        """Run rounds adaptively until ``|KL(P_i || P_{i-1})| < termination_abs_dkl``.
+        """Run rounds adaptively until both termination conditions hold.
 
-        Experimental — see ``polyswyftSettings.cyclic_rounds`` docstring.
+        Stops after the first round ``rd > 0`` with
+        ``|KL(P_rd || P_{rd-1})| < termination_abs_dkl`` **and**
+        ``KL(P_rd || pi) > termination_min_compression`` (paper section 3.4,
+        ``C_comp``). Experimental — see ``polyswyftSettings.cyclic_rounds``.
         """
-        DKL_info = (100, 100)
-        DKL, DKL_std = DKL_info
         rd = self.polyswyftSettings.NRE_start_from_round
-        while abs(DKL) >= self.polyswyftSettings.termination_abs_dkl:
+        while True:
             self._cycle(rd)
-            DKL, DKL_std = self.dkl_storage[rd]
+            if rd > 0:  # KL(P_0 || P_-1) does not exist
+                dkl = abs(self.dkl_storage[rd][0])
+                compression = self.dkl_compression_storage[rd][0]
+                if (
+                    dkl < self.polyswyftSettings.termination_abs_dkl
+                    and compression > self.polyswyftSettings.termination_min_compression
+                ):
+                    break
             rd += 1
-        self.polyswyftSettings.NRE_num_retrain_rounds = rd - 1
+        self.polyswyftSettings.NRE_num_retrain_rounds = rd
 
     def _cycle(self, rd: int) -> None:
         """Execute one NSNRE round: simulate, train NRE, run PolyChord, score KL.
@@ -292,6 +307,13 @@ class PolySwyft:
         network.train()
         trainer.fit(network, dm)
         self._comm.Barrier()
+
+        ### restore best-val_loss weights (EarlyStopping leaves the network `patience` epochs past them) ###
+        checkpoint = getattr(trainer, "checkpoint_callback", None)
+        best_path = self._comm.bcast(checkpoint.best_model_path if checkpoint is not None else "", root=0)
+        if best_path:
+            network.load_state_dict(torch.load(best_path, weights_only=False)["state_dict"])
+
         if self.polyswyftSettings.activate_wandb and self._rank == 0:
             import wandb
 
@@ -318,6 +340,8 @@ class PolySwyft:
 
         self.logger.info("Using PolyChord with trained NRE to generate deadpoints for the next round!")
         self.polyset.base_dir = root
+        if self._polyset_seed >= 0:  # PolyChord: negative seed = clock-seeded, leave alone
+            self.polyset.seed = self._polyset_seed + rd
         self._comm.barrier()
 
         pypolychord.run_polychord(

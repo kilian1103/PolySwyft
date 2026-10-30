@@ -26,10 +26,9 @@ PolySwyft executes a five-phase NSNRE cycle (see paper Figure 1).
      judge whether enough compression was achieved (paper section 3.4
      refers to this manual check as the ``C_comp`` criterion).
    * ``cyclic_rounds=False`` (experimental) — stop once
-     ``|KL(P_i || P_{i-1})| < termination_abs_dkl``. There is no
-     automatic ``C_comp`` enforcement; the user is expected to choose
-     ``termination_abs_dkl`` conservatively and watch the compression
-     plot.
+     ``|KL(P_i || P_{i-1})| < termination_abs_dkl`` **and**
+     ``KL(P_i || pi) > termination_min_compression`` (the paper's
+     ``C_comp``; default ``0.0`` disables the second check).
 
 The cycle is implemented in :class:`polyswyft.core.PolySwyft`. KL
 diagnostics live in :mod:`polyswyft.utils`.
@@ -46,7 +45,7 @@ where :math:`Z_{NS}` is the per-round normalisation that accounts for
 training the NRE on a dead-measure distribution rather than directly on
 the prior. See paper section 3.4 for the full derivation.
 
-For the convergence criterion (paper eq. 10):
+For the convergence criterion (paper eq. 12):
 
 .. math::
 
