@@ -106,7 +106,7 @@ class PolySwyftNetwork(swyft.SwyftModule):
         Evaluated once per PolyChord live-point proposal. PolyChord uses
         the returned scalar as ``log L`` for nested sampling; under the
         likelihood-to-evidence-ratio identity this is equivalent up to a
-        constant ``log Z_NS`` per round (see paper eq. 11).
+        constant ``log Z_NS`` per round (see paper eqs. 9-10).
 
         Parameters
         ----------

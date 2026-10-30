@@ -49,7 +49,7 @@ def test_settings_dm_kwargs_structure():
     assert set(settings.dm_kwargs.keys()) == {"fractions", "batch_size", "shuffle", "num_workers"}
     assert settings.dm_kwargs["fractions"] == [0.8, 0.1, 0.1]
     assert settings.dm_kwargs["batch_size"] == 64
-    assert settings.dm_kwargs["shuffle"] is False
+    assert settings.dm_kwargs["shuffle"] is True  # re-rolls swyft's disjoint pairs each epoch
     assert settings.dm_kwargs["num_workers"] == 0
 
 
